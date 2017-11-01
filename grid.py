@@ -8,7 +8,7 @@ class GeneratorGrid:
 		@params height la hauteur de la grille
 				width la largeur de la grille
 				proba_walls la probabilité q'une case soit un mur
-				proba_colors le tuple donnant les probabilité que la case soit (rouge, verte, bleue, noire)
+				proba_colors le tuple donnant les probabilité que la case soit (verte, bleue, rouge, noire)
 
 	'''
 
@@ -48,7 +48,6 @@ class GeneratorGrid:
 					color = 2
 				else:
 					color = 3
-
 				
 				self.grid[i].append(Location(i, j, score, color, type_location = type_location))
 
@@ -64,12 +63,13 @@ class GeneratorGrid:
 
 		
 
-class Grid:
+class Grid_Project:
 
 	def __init__(self):
 		self.grid = []
 		self.width = None
 		self.height = None
+		self.load_grid("test")
 
 	def load_grid(self, file_name):
 		with open(file_name, "r") as file:
@@ -100,7 +100,7 @@ class Location:
 
 
 
-grid = GeneratorGrid(10, 10)
-grid.export_grid("test")
-grid2 = Grid()
-grid2.load_grid("test")
+# grid = GeneratorGrid(10, 10)
+# grid.export_grid("test")
+# grid2 = Grid()
+# grid2.load_grid("test")
