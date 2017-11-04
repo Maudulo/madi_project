@@ -2,34 +2,80 @@ import sys
 
 from grid import *
 from tkinter import *
-grid_generator = GeneratorGrid(20, 20, proba_walls = 0.1)
-grid_generator.export_grid("test")
-grid_display = Grid_Project()
-grid_display.load_grid("test")
+from tkinter.filedialog import *
 
-window = Tk()
 
-button = Button(window, text="Charger", command=window.quit)
-button.pack()
 
-height_canvas = 500
-width_canvas = 500
-canvas = Canvas(window, width = width_canvas, height = height_canvas)
-for i in range(grid_display.height):
-	for j in range(grid_display.width):
-		color = ""
-		if "wall" in str(grid_display.grid[i][j].type_location):
-			color = 'black'
-		elif grid_display.grid[i][j].color == 0:
-			color = 'light green'
-		elif grid_display.grid[i][j].color == 1:
-			color = 'light blue'
-		elif grid_display.grid[i][j].color == 2:
-			color = 'lightSalmon2'
-		else:
-			color = 'grey65'
 
-		canvas.create_rectangle(i * (height_canvas / grid_display.height), j * (width_canvas / grid_display.width), (i + 1) * (height_canvas / grid_display.height), (j + 1) * (width_canvas / grid_display.width), fill = color)
-canvas.pack()
+class MainDisplay:
 
-window.mainloop()
+	def __init__(self):
+
+		self.window = Tk()
+
+		self.height_canvas = 500
+		self.width_canvas = 500
+
+		self.grid_display = Grid_Project()
+
+		self.canvas = Canvas(self.window, width = self.width_canvas, height = self.height_canvas)
+
+		self.display_buttons()
+
+		self.window.mainloop()
+
+
+	def display_buttons(self):
+		buttonLoad = Button(self.window, text="Charger grille existante", command=self.import_file)
+		buttonLoad.pack()
+		buttonGenerate = Button(self.window, text="Générer nouvelle grille", command=self.generate)
+		buttonGenerate.pack()
+
+	def import_file(self):
+
+		path = askopenfilename(filetypes=[("MADI","*.madi")])
+
+		self.display_canvas(path)
+
+	def generate(self):
+
+		# temporaire
+		height = 20
+		width = 20
+		proba = 0.2
+		path = "test"
+		###
+
+		if len(path) < 5 or not str(path[len(path) - 5:len(path) - 1]) in ".madi":
+			path += ".madi"
+
+		grid_generator = GeneratorGrid(height, width, proba_walls = proba)
+		grid_generator.export_grid(path)
+
+		self.display_canvas(path)
+
+	def display_canvas(self, path):
+		
+		self.grid_display = Grid_Project()
+		self.grid_display.load_grid(path)
+
+		for i in range(self.grid_display.height):
+			for j in range(self.grid_display.width):
+				color = ""
+				if "wall" in str(self.grid_display.grid[i][j].type_location):
+					color = 'black'
+				elif self.grid_display.grid[i][j].color == 0:
+					color = 'light green'
+				elif self.grid_display.grid[i][j].color == 1:
+					color = 'light blue'
+				elif self.grid_display.grid[i][j].color == 2:
+					color = 'lightSalmon2'
+				else:
+					color = 'grey65'
+
+				self.canvas.create_rectangle(i * (self.height_canvas / self.grid_display.height), j * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), fill = color)
+		self.canvas.pack()
+
+
+window = MainDisplay()
+

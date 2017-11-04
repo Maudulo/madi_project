@@ -1,6 +1,8 @@
 import random
 from enum import Enum
 
+import os
+
 class GeneratorGrid:
 	''' 
 		Permet la génération d'une grille aléatoire selon une taille et des probabilités données
@@ -23,7 +25,7 @@ class GeneratorGrid:
 		for i in range(self.height):
 			self.grid.append([])
 			for j in range(self.height):
-
+				
 				score = 0
 				color = None
 
@@ -53,6 +55,7 @@ class GeneratorGrid:
 
 
 	def export_grid(self, file_name):
+
 		with open(file_name, "w") as file:
 			file.write(str(self.height) + " " + str(self.width) + "\n")
 			for i in range(self.height):
@@ -69,7 +72,6 @@ class Grid_Project:
 		self.grid = []
 		self.width = None
 		self.height = None
-		self.load_grid("test")
 
 	def load_grid(self, file_name):
 		with open(file_name, "r") as file:
@@ -100,7 +102,7 @@ class Location:
 
 
 
-# grid = GeneratorGrid(10, 10)
-# grid.export_grid("test")
-# grid2 = Grid()
-# grid2.load_grid("test")
+# grid = GeneratorGrid(10, 10, proba_walls = 0.2)
+# grid.export_grid("test.madi")
+# grid2 = Grid_Project()
+# grid2.load_grid("test.madi")
