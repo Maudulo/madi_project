@@ -19,13 +19,15 @@ class GeneratorGrid:
 		self.height = height
 		self.width = width
 		self.grid = []
+		self.position_robot = 0
 		self.init_locations(proba_walls, proba_colors)
+		self.init_position_robot()
 
 	def init_locations(self, proba_walls, proba_colors):
-		for i in range(self.height):
+		for y in range(self.height):
 			self.grid.append([])
-			for j in range(self.height):
-				
+			for x in range(self.width):
+
 				score = 0
 				color = None
 
@@ -51,17 +53,27 @@ class GeneratorGrid:
 				else:
 					color = 3
 				
-				self.grid[i].append(Location(i, j, score, color, type_location = type_location))
+				self.grid[y].append(Location(y, x, score, color, type_location = type_location))
+
+	def init_position_robot(self):
+		position = 0
+		possible_positions = []
+		for y in range(self.height):
+			for x in range(self.width):
+				if self.grid[y][x].type_location in "normal":
+					possible_positions.append(position)
+				position +=1
+		self.position_robot = random.choice(possible_positions)
 
 
 	def export_grid(self, file_name):
 
 		with open(file_name, "w") as file:
 			file.write(str(self.height) + " " + str(self.width) + "\n")
-			for i in range(self.height):
-				for j in range(self.width):
-					file.write(str(self.grid[i][j].score) + " " + str(self.grid[i][j].color) + " " + str(self.grid[i][j].type_location) + "\n")
-
+			for y in range(self.height):
+				for x in range(self.width):
+					file.write(str(self.grid[y][x].score) + " " + str(self.grid[y][x].color) + " " + str(self.grid[y][x].type_location) + "\n")
+			file.write(str(self.position_robot))
 
 
 		
@@ -72,6 +84,9 @@ class Grid_Project:
 		self.grid = []
 		self.width = None
 		self.height = None
+		self.position_robot_x = None
+		self.position_robot_y = None
+		self.score = 0
 
 	def load_grid(self, file_name):
 		with open(file_name, "r") as file:
@@ -79,14 +94,17 @@ class Grid_Project:
 			self.height = int(line[0])
 			self.width = int(line[1])
 
-			for i in range(self.height):
+			for y in range(self.height):
 				self.grid.append([])
-				for j in range(self.width):
+				for x in range(self.width):
 					line = file.readline().split(" ")
 					score = int(line[0])
 					color = int(line[1])
 					type_location = str(line[2])
-					self.grid[i].append(Location(i, j, score, color, type_location = type_location))
+					self.grid[y].append(Location(x, y, score, color, type_location = type_location))
+			position_robot = int(file.readline())
+			self.position_robot_x = position_robot % self.height
+			self.position_robot_y = int(position_robot / self.width)
 
 
 
