@@ -23,14 +23,57 @@ class MainDisplay:
 		self.canvas.bind("<Key>", self.press_keyboard)
 		self.label_score = Label()
 		self.display_buttons()
+		self.get_name_window = None
 
 		self.window.mainloop()
+
+	def closing_option_window(self):
+		self.get_name_window.destroy()
+		self.get_name_window = None
+
+	def display_generate_options(self):
+
+		if self.get_name_window != None:
+			print("Une fenêtre d'option est déjà ouverte !")
+			self.get_name_window.focus_force()
+		else:
+			self.get_name_window = Toplevel(self.window)
+			self.get_name_window.protocol("WM_DELETE_WINDOW", self.closing_option_window)
+
+			Label(self.get_name_window, text="nom du fichier:").pack()
+			file_name = Entry(self.get_name_window)
+			file_name.pack()
+
+			Label(self.get_name_window, text="hauteur grille:").pack()
+			height_scale = Scale(self.get_name_window, from_=5, to=50, orient=HORIZONTAL)
+			height_scale.set(20)
+			height_scale.pack()
+
+			Label(self.get_name_window, text="largeur grille:").pack()
+			width_scale = Scale(self.get_name_window, from_=5, to=50, orient=HORIZONTAL)
+			width_scale.set(20)
+			width_scale.pack()
+
+			Label(self.get_name_window, text="proportion de mur:").pack()
+			wall_proportion_scale = Scale(self.get_name_window, from_=0, to=0.99, resolution=0.05, orient=HORIZONTAL)
+			wall_proportion_scale.set(0.20)
+			wall_proportion_scale.pack()
+
+			# self.height = height_scale.get()
+			# self.width = width_scale.get()
+			# self.proba = wall_proportion_scale.get()
+			# self.path = file_name.get()
+
+			validate = Button(self.get_name_window, text = "Valider", command =lambda: self.generate(height_scale.get(),width_scale.get(),wall_proportion_scale.get(),file_name.get()))
+			# validate = Button(self.get_name_window, text = "Valider")
+			validate.pack()
+		
 
 
 	def display_buttons(self):
 		buttonLoad = Button(self.window, text="Charger grille existante", command=self.import_file)
 		buttonLoad.pack()
-		buttonGenerate = Button(self.window, text="Générer nouvelle grille", command=self.generate)
+		buttonGenerate = Button(self.window, text="Générer nouvelle grille", command=self.display_generate_options)
 		buttonGenerate.pack()
 
 	def import_file(self):
@@ -39,16 +82,15 @@ class MainDisplay:
 
 		self.display_canvas(path)
 
-	def generate(self):
+	def generate(self,height,width,proba,path):
 
-		# temporaire
-		height = 20
-		width = 20
-		proba = 0.2
-		path = "test"
-		###
+		self.get_name_window.destroy()
+		self.get_name_window = None
 
-		if len(path) < 5 or not str(path[len(path) - 5:len(path) - 1]) in ".madi":
+		if len(path) == 0:
+			path = "generated_grid.madi"
+
+		elif len(path) < 5 or not str(path[len(path) - 5:len(path) - 1]) in ".madi":
 			path += ".madi"
 
 		grid_generator = GeneratorGrid(height, width, proba_walls = proba)
