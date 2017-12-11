@@ -15,11 +15,129 @@ import os
 
 class PDM:
 
-	def __init__(self, T, R):
-		self.T = np.array(T)
-		self.R = np.array(R)
-		self.number_of_actions = len(T[0])
-		self.number_of_states = len(T)
+	def __init__(self, board, goal):
+		self.board = board
+		self.goal = goal
+		self.get_transition_matrix()
+		self.width = len(self.board[0])
+		self.height = len(self.board)
+		self.number_of_states = self.width * self.height
+		self.number_of_actions = 4
+
+
+	def get_transition_matrix(self):
+		
+		# on créer le tableau des récompenses
+		self.R = []
+		for line in self.board:
+			for pos in line:
+				if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]:
+					self.R.append(1000)
+				elif pos.type_location == "normal":
+					self.R.append(-pos.color)
+				else:
+					self.R.append(0)
+
+		# on créer la matrice de transition
+		self.T = np.zeros((self.number_of_states, self.number_of_actions, self.number_of_states))
+		for y in range(self.height):
+			for x in range(self.width):
+				bias = 0
+
+				# vers le haut
+				if y == 0: # si on est tout en haut
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+				elif self.board[y-1][x].type_location == "normal": # si la case du haut est accessible
+					# case haut-gauche
+					if x == 0:
+						bias += 0.2
+					elif self.board[y-1][x-1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y-1)+x-1] = 0.2
+					else:
+						bias +=0.2
+					# case haut-droite
+					if x == self.width-1:
+						bias +=0.2
+					elif self.board[y-1][x+1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y-1)+x+1] = 0.2
+					else:
+						bias +=0.2
+					# case haut-centre
+					self.T[self.width*y+x, 1, self.width*(y-1)+x] = 0.6+bias
+				else: # si la case du haut est un mur
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+				
+				bias = 0
+				# vers le bas
+				if y == self.height-1: # si on est tout en bas
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+				elif self.board[y+1][x].type_location == "normal": # si la case du bas est accessible
+					# case bas-gauche
+					if x == 0:
+						bias += 0.2
+					elif self.board[y+1][x-1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y+1)+x-1] = 0.2
+					else:
+						bias +=0.2
+					# case bas-droite
+					if x == self.width-1:
+						bias +=0.2
+					elif self.board[y+1][x+1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y+1)+x+1] = 0.2
+					else:
+						bias +=0.2
+					# case bas-centre
+					self.T[self.width*y+x, 1, self.width*(y+1)+x] = 0.6+bias
+				else: # si la case du bas est un mur
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+
+				bias = 0
+				# vers la gauche
+				if x == 0: # si on est tout à gauche
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+				elif self.board[y][x-1].type_location == "normal": # si la case de gauche est accessible
+					# case gauche-haut
+					if y == 0:
+						bias += 0.2
+					elif self.board[y-1][x-1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y-1)+x-1] = 0.2
+					else:
+						bias +=0.2
+					# case gauche-bas
+					if y == self.height-1:
+						bias +=0.2
+					elif self.board[y+1][x-1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y+1)+x-1] = 0.2
+					else:
+						bias +=0.2
+					# case gauche-centre
+					self.T[self.width*y+x, 1, self.width*y+x-1] = 0.6+bias
+				else: # si la case de gauche est un mur
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+
+				bias = 0
+				# vers la droite
+				if x == self.width-1: # si on est tout à droite
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
+				elif self.board[y][x+1].type_location == "normal": # si la case de droite est accessible
+					# case droite-haut
+					if y == 0:
+						bias += 0.2
+					elif self.board[y-1][x+1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y-1)+x+1] = 0.2
+					else:
+						bias +=0.2
+					# case droite-bas
+					if y == self.height-1:
+						bias +=0.2
+					elif self.board[y+1][x+1].type_location == "normal":
+						self.T[self.width*y+x, 1, self.width*(y+1)+x+1] = 0.2
+					else:
+						bias +=0.2
+					# case droite-centre
+					self.T[self.width*y+x, 1, self.width*y+x+1] = 0.6+bias
+				else: # si la case de droite est un mur
+					self.T[self.width*y+x, 1, self.width*y+x] = 1
 
 
 	def get_best_policy_from_best_values(self, Vt):
@@ -67,6 +185,7 @@ class PDM:
 			results = np.linalg.solve(coefs,consts)
 			# check if solution is correct
 			if not np.allclose(np.dot(coefs,results),const):
+				messagebox.showerror("Erreur", "une erreur est arrivée dans la résolution du système d'équations pour l'itération de la politique\nImpossible de trouver la solution")
 				print("Erreur dans la résolution du système d'équations pour l'itération de la politique")
 				return -1
 			# on récupère la nouvelle meilleure politique 
@@ -87,7 +206,7 @@ class PDM:
 		if CAN_USE_PL:
 			self._resolution_by_PL(gamma)
 		else:
-			messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py")
+			messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
 
 	def _resolution_by_PL(self, gamma = 0.5):
 		# résoudre min sum(Vt)
