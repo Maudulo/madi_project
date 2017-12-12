@@ -27,14 +27,14 @@ class PDM:
 
 	def get_transition_matrix(self, p, q, max_reward):
 		
-		# on créer le tableau des récompenses
+		# on crée le tableau des récompenses
 		self.R = []
 		for line in self.board:
 			for pos in line:
 				if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]:
 					self.R.append(max_reward**q)
 				elif pos.type_location == "normal":
-					self.R.append(-(pos.color)**q)
+					self.R.append(-(pos.color+1)**q)
 				else:
 					self.R.append(0)
 
@@ -152,7 +152,7 @@ class PDM:
 		while True:
 			t += 1
 			for s in range(self.number_of_states):
-				Vt[s] = max([self.R[s] +  gamma * (np.dot(self.T[s,a]*Vt-1)) for a in range(self.number_of_actions)])
+				Vt[s] = max([self.R[s] +  gamma * (np.dot(self.T[s,a]*Vt_1)) for a in range(self.number_of_actions)])
 			# si l'écart de valeur entre deux itérations est inférieur à epsilon, alors on s'arrête
 			# if max([abs(x-y) for (x,y) in zip(Vt,Vt_1)]) < epsilon:
 			# 	break
