@@ -45,7 +45,7 @@ class PDM:
                             self.R[i].append(max_reward**q)
 
                         elif pos.type_location == "normal" and i == pos.color: # si c'est une case normale de la couleur correcte
-                            self.R[i].append(-(pos.color+1)**q)
+                            self.R[i].append(-(pos.score))
 
                         else: # si c'est un mur ou une autre couleur
                             self.R[i].append(0)
