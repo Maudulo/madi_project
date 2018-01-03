@@ -42,13 +42,13 @@ class PDM:
                     for pos in line:
 
                         if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
-                            self.R.append(max_reward**q)
+                            self.R[i].append(max_reward**q)
 
                         elif pos.type_location == "normal" and i == pos.color: # si c'est une case normale de la couleur correcte
-                            self.R.append(-(pos.color+1)**q)
+                            self.R[i].append(-(pos.color+1)**q)
 
                         else: # si c'est un mur ou une autre couleur
-                            self.R.append(0)
+                            self.R[i].append(0)
 
 
 
@@ -307,13 +307,13 @@ class PDM:
         except GurobiError:
             print("Erreur Gurobi pour l'optimisation linéaire")
 
-    def PLMO(self, gamma = 0.5):
+    def PLMO(self, gamma = 0.5, pure_politic = False):
         if CAN_USE_PL:
-            return self._PLMO(gamma)
+            return self._PLMO(gamma, pure_politic)
         else:
             messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
 
-    def _PLMO(self, gamma):
+    def _PLMO(self, gamma, pure_politic):
 
         try:
             # Create a new model
@@ -321,14 +321,20 @@ class PDM:
 
             # Create variables
             F = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
-            x = [[0 for _ in self.number_of_action] for _ in range(self.number_of_states)]
+            x = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
             for state in range(self.number_of_states):
-                for action in range(self.number_of_action):
+                for action in range(self.number_of_actions):
                     x[state][action] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
 
             fi = [0 for _ in range(self.number_of_criteria)]
             for i in range(self.number_of_criteria):
                 fi[i] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+
+            if pure_politic:
+                d = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+                for state in range(self.number_of_states):
+                    for action in range(self.number_of_actions):
+                        d[state][action] = self.model.addVar(0, 1, vtype=GRB.CONTINUOUS)
 
             self.model.update()
 
@@ -338,11 +344,19 @@ class PDM:
             # Add constraint
             for i in range(self.number_of_criteria):
                 self.model.addConstr(F, GRB.LESS_EQUAL, fi[i])
-                self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[i][state][action] * x[state][action] for state in range(self.number_of_states) for action in self.number_of_actions]))
+                self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[i][state] * x[state][action] for state in range(self.number_of_states) for action in range(self.number_of_actions)]))
 
             for state in range(self.number_of_states):
-                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)] - gamma * quicksum([self.T[state,action,s2]*x[s2][action] for s2 in range(self.number_of_states)]), self.R[i][state]))
-           
+
+                # TODO : trouver à quoi correspond le "mu"
+                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)]) - gamma * quicksum([(self.T[state,action,s2] * x[s2][action]) for s2 in range(self.number_of_states) for action in range(self.number_of_actions)]), GRB.EQUAL, quicksum([x[state][action] for action in range(self.number_of_actions)]))
+            
+            if pure_politic:
+                for state in range(self.number_of_states):
+                    self.model.addConstr(quicksum([d[state][action] for action in range(self.number_of_actions)]), GRB.LESS_EQUAL, 1)
+                    for action in range(self.number_of_actions):
+                        self.model.addConstr((1 - gamma) * x[state][action], GRB.LESS_EQUAL, d[state][action])
+
             self.model.update()
 
             start_time = time.time()
@@ -356,22 +370,22 @@ class PDM:
 
             print('Obj:', self.model.objVal)
 
-            return (self.get_best_policy_from_best_values(list_var_gurobi, gamma), x, t)
+            return (x, t)
 
         except GurobiError:
             print("Erreur Gurobi pour l'optimisation linéaire")
 
 
 
+# g = GeneratorGrid(2, 2, proba_walls = 0)
+# pdm = PDM(g.grid, (1, 1)) 
+# print(pdm.resolution_by_PL())
+# print("----------------------")
+# print(pdm.iteration_by_policy())
+# print("----------------------")
+# print(pdm.iteration_by_value())
+
+
 g = GeneratorGrid(2, 2, proba_walls = 0)
-pdm = PDM(g.grid, (1, 1)) 
-print(pdm.resolution_by_PL())
-print("----------------------")
-print(pdm.iteration_by_policy())
-print("----------------------")
-print(pdm.iteration_by_value())
-
-
-g = GeneratorGrid(2, 2, proba_walls = 0, multi_obj = True)
-pdm = PDM(g.grid, (1, 1)) 
-print(pdm.PLMO())
+pdm = PDM(g.grid, (1, 1), multi_obj = True) 
+print(pdm.PLMO(pure_politic = False))
