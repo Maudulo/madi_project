@@ -19,34 +19,55 @@ import os
 
 class PDM:
 
-    def __init__(self, board, goal, p = 0.6, q=1, max_reward = 1000):
+    def __init__(self, board, goal, p = 0.6, q=1, max_reward = 1000, multi_obj = False):
         self.board = board
         self.goal = goal
         self.width = len(self.board[0])
         self.height = len(self.board)
         self.number_of_states = self.width * self.height
         self.number_of_actions = 4 # (haut, bas, gauche droite)
+        self.number_of_criteria = 4
         #self.objectif = 2 # indice de la position objectif
-        self.get_transition_matrix(p, q, max_reward)
+        self.get_transition_matrix(p, q, max_reward, multi_obj)
         
 
-
-    def get_transition_matrix(self, p, q, max_reward):
-        
+    def get_reward_matrix(self, q, max_reward, multi_obj = False):
         # on crée le tableau des récompenses
         self.R = []
 
-        for line in self.board:
-            for pos in line:
+        if(multi_obj):
+            for i in range(self.number_of_criteria):
+                self.R.append([])
+                for line in self.board:
+                    for pos in line:
 
-                if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
-                    self.R.append(max_reward**q)
+                        if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+                            self.R.append(max_reward**q)
 
-                elif pos.type_location == "normal": # si c'est une case normale
-                    self.R.append(-(pos.color+1)**q)
+                        elif pos.type_location == "normal" and i == pos.color: # si c'est une case normale de la couleur correcte
+                            self.R.append(-(pos.color+1)**q)
 
-                else: # si c'est un mur
-                    self.R.append(0)
+                        else: # si c'est un mur ou une autre couleur
+                            self.R.append(0)
+
+
+
+        else:
+            for line in self.board:
+                for pos in line:
+                    if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+                        self.R.append(max_reward**q)
+
+                    elif pos.type_location == "normal": # si c'est une case normale
+                        self.R.append(-(pos.color+1)**q)
+
+                    else: # si c'est un mur
+                        self.R.append(0)
+
+
+    def get_transition_matrix(self, p, q, max_reward, multi_obj = False):
+        
+        self.get_reward_matrix(q, max_reward, multi_obj)
 
         # on crée la matrice de transition
         #self.T = np.zeros((self.number_of_states, self.number_of_actions, 4))
@@ -288,7 +309,7 @@ class PDM:
 
     def PLMO(self, gamma = 0.5):
         if CAN_USE_PL:
-            return self._PL(gamma)
+            return self._PLMO(gamma)
         else:
             messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
 
@@ -300,31 +321,27 @@ class PDM:
 
             # Create variables
             F = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
-
+            x = [[0 for _ in self.number_of_action] for _ in range(self.number_of_states)]
             for state in range(self.number_of_states):
                 for action in range(self.number_of_action):
                     x[state][action] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
 
+            fi = [0 for _ in range(self.number_of_criteria)]
             for i in range(self.number_of_criteria):
                 fi[i] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
 
             self.model.update()
 
-           
-
             # Set objective
             self.model.setObjective(F, GRB.MAXIMIZE)
 
             # Add constraint
-
             for i in range(self.number_of_criteria):
                 self.model.addConstr(F, GRB.LESS_EQUAL, fi[i])
-                self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[state][action] * x[state][action] for state in range(self.number_of_states) for action in self.number_of_actions]))
+                self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[i][state][action] * x[state][action] for state in range(self.number_of_states) for action in self.number_of_actions]))
 
             for state in range(self.number_of_states):
-                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for s2 in range(self.number_of_states)]), self.R[state]))
-                self.model.addConstr(Vt[state] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for s2 in range(self.number_of_states)]), GRB.GREATER_EQUAL, self.R[state])
-                self.model.addConstr(Vt[state] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for action in range(self.number_of_actions) for s2 in range(self.number_of_states)]), GRB.GREATER_EQUAL, self.R[state])
+                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)] - gamma * quicksum([self.T[state,action,s2]*x[s2][action] for s2 in range(self.number_of_states)]), self.R[i][state]))
            
             self.model.update()
 
@@ -339,7 +356,7 @@ class PDM:
 
             print('Obj:', self.model.objVal)
 
-            return (self.get_best_policy_from_best_values(list_var_gurobi, gamma), Vt, t)
+            return (self.get_best_policy_from_best_values(list_var_gurobi, gamma), x, t)
 
         except GurobiError:
             print("Erreur Gurobi pour l'optimisation linéaire")
@@ -354,3 +371,7 @@ print(pdm.iteration_by_policy())
 print("----------------------")
 print(pdm.iteration_by_value())
 
+
+g = GeneratorGrid(2, 2, proba_walls = 0, multi_obj = True)
+pdm = PDM(g.grid, (1, 1)) 
+print(pdm.PLMO())
