@@ -285,6 +285,64 @@ class PDM:
 		except GurobiError:
 		    print("Erreur Gurobi pour l'optimisation linéaire")
 
+	def PLMO(self, gamma = 0.5):
+		if CAN_USE_PL:
+			return self._PL(gamma)
+		else:
+			messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
+
+	def _PLMO(self, gamma):
+
+		try:
+		    # Create a new model
+		    self.model = Model("pl_mo")
+
+		    # Create variables
+ 			F = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+
+		    for state in range(self.number_of_states):
+		    	for action in range(self.number_of_action):
+		    		x[state][action] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+
+		    for i in range(self.number_of_criteria):
+		    	fi[i] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+
+		    self.model.update()
+
+		   
+
+		    # Set objective
+		    self.model.setObjective(F, GRB.MAXIMIZE)
+
+		    # Add constraint
+
+		    for i in range(self.number_of_criteria):
+		    	self.model.addConstr(F, GRB.LESS_EQUAL, fi[i])
+				self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[state][action] * x[state][action] for state in range(self.number_of_states) for action in self.number_of_actions]))
+
+		    for state in range(self.number_of_states):
+		    	self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for s2 in range(self.number_of_states)]), self.R[state]))
+		    	self.model.addConstr(Vt[state] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for s2 in range(self.number_of_states)]), GRB.GREATER_EQUAL, self.R[state])
+		    	self.model.addConstr(Vt[state] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for action in range(self.number_of_actions) for s2 in range(self.number_of_states)]), GRB.GREATER_EQUAL, self.R[state])
+		   
+		    self.model.update()
+
+		    start_time = time.time()
+		    self.model.optimize()
+		    t = (time.time() - start_time)
+
+		    list_var_gurobi = []
+		    for v in self.model.getVars():
+		        print(v.varName, v.x)
+		        list_var_gurobi.append(v.x)
+
+		    print('Obj:', self.model.objVal)
+
+		    return (self.get_best_policy_from_best_values(list_var_gurobi, gamma), Vt, t)
+
+		except GurobiError:
+		    print("Erreur Gurobi pour l'optimisation linéaire")
+
 
 
 g = GeneratorGrid(2, 2, proba_walls = 0)
