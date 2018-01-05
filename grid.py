@@ -101,6 +101,7 @@ class Grid_Project:
 		self.position_robot_x = None
 		self.position_robot_y = None
 		self.score = [0,0,0,0]
+		self.color_visited = [0,0,0,0]
 		self.origin_robot_x = None
 		self.origin_robot_y = None
 		self.goal_x = None
@@ -114,6 +115,7 @@ class Grid_Project:
 			self.width = int(line[1])
 
 			self.score = [0,0,0,0]
+			self.color_visited = [0,0,0,0]
 
 			for y in range(self.height):
 				self.grid.append([])
@@ -135,7 +137,7 @@ class Grid_Project:
 
 
 	def display_score(self):
-		return "vert:" + str(self.score[0]) + " bleu:" + str(self.score[1]) + " rouge:" + str(self.score[2]) + " noire:" + str(self.score[3])
+		return "vert:" + str(self.score[0]) + " bleu:" + str(self.score[1]) + " rouge:" + str(self.score[2]) + " noire:" + str(self.score[3]) + "\nScore total:" + str(sum(self.score)) + "\ncases: vert:" + str(self.color_visited[0]) + " bleu:" + str(self.color_visited[1]) + " rouge:" + str(self.color_visited[2]) + " noire:" + str(self.color_visited[3])
 
 	def relocate_goal_position(self, x, y):
 		self.goal_x = x

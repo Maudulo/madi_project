@@ -84,6 +84,7 @@ class MainDisplay:
 
 		# reset score
 		self.grid_display.score = [0,0,0,0]
+		self.grid_display.color_visited = [0,0,0,0]
 		self.display_score()
 		self.solution = None
 
@@ -318,6 +319,7 @@ class MainDisplay:
 			self.grid_display.position_robot_y = y
 			self.grid_display.position_robot_x = x
 			self.grid_display.score[self.grid_display.grid[old_y][old_x].color] += self.grid_display.grid[old_y][old_x].score
+			self.grid_display.color_visited[self.grid_display.grid[old_y][old_x].color] += 1
 			# self.grid_display.score += self.grid_display.grid[y][x].score
 
 			self.move_robot(x, y)
