@@ -225,7 +225,7 @@ class MainDisplay:
 				self.canvas.create_rectangle(j * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = color)
 				self.canvas.create_text(j * (self.width_canvas / self.grid_display.width) + 5, i * (self.height_canvas / self.grid_display.height) + 8, text = self.grid_display.grid[i][j].score)
 
-		self.canvas.grid(columnspan = 2)
+		self.canvas.grid(columnspan = 3)
 		self.display_score()
 		self.display_start()
 		self.display_robot()
@@ -236,7 +236,7 @@ class MainDisplay:
 		j = self.grid_display.goal_x
 		i = self.grid_display.goal_y
 		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#FF6600', tags = "goal")
-		self.canvas.grid(columnspan = 2)
+		self.canvas.grid(columnspan = 3)
 		self.display_robot()
 
 	def display_start(self):
@@ -244,7 +244,7 @@ class MainDisplay:
 		j = self.grid_display.origin_robot_x
 		i = self.grid_display.origin_robot_y
 		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#16992C', tags = "start")
-		self.canvas.grid(columnspan = 2)
+		self.canvas.grid(columnspan = 3)
 		self.display_robot()
 
 	def display_robot(self):
@@ -252,7 +252,7 @@ class MainDisplay:
 		j = self.grid_display.position_robot_x
 		i = self.grid_display.position_robot_y
 		self.canvas.create_oval((j + coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i +coef_reduce_circle) * (self.height_canvas / self.grid_display.height), (j + 1 - coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i + 1 - coef_reduce_circle) * (self.height_canvas / self.grid_display.height), fill = 'green', tags = "robot")
-		self.canvas.grid(columnspan = 2)		
+		self.canvas.grid(columnspan = 3)		
 
 	def move_robot(self, x, y):
 		self.grid_display.position_robot_x = x
@@ -266,7 +266,7 @@ class MainDisplay:
 	def display_score(self):
 		self.label_score.destroy()
 		self.label_score = Label(self.window, text = "score : " + self.grid_display.display_score())
-		self.label_score.grid(columnspan = 2, padx=10, pady=10)
+		self.label_score.grid(columnspan = 3, padx=10, pady=10)
 
 	def press_keyboard(self, event):
 
