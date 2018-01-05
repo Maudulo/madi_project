@@ -105,6 +105,7 @@ class Grid_Project:
 		self.origin_robot_y = None
 		self.goal_x = None
 		self.goal_y = None
+		self.colors = [0,0,0,0]
 
 	def load_grid(self, file_name):
 		with open(file_name, "r") as file:
@@ -120,6 +121,7 @@ class Grid_Project:
 					line = file.readline().split(" ")
 					score = int(line[0])
 					color = int(line[1])
+					self.colors[color] += 1
 					type_location = str(line[2])
 					self.grid[y].append(Location(x, y, score, color, type_location = type_location))
 			position_robot = int(file.readline())
@@ -130,6 +132,7 @@ class Grid_Project:
 			self.origin_robot_y = self.position_robot_y
 			self.goal_x = goal_position % self.height
 			self.goal_y = int(goal_position / self.width)
+
 
 	def display_score(self):
 		return "vert:" + str(self.score[0]) + " bleu:" + str(self.score[1]) + " rouge:" + str(self.score[2]) + " noire:" + str(self.score[3])
