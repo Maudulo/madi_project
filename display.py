@@ -3,7 +3,7 @@ import sys
 from grid import *
 from tkinter import *
 from tkinter.filedialog import *
-
+from tkinter import messagebox
 
 
 
@@ -12,7 +12,7 @@ class MainDisplay:
 	def __init__(self):
 
 		self.window = Tk()
-
+		self.window.resizable(False, False)
 		self.height_canvas = 500
 		self.width_canvas = 500
 
@@ -23,58 +23,133 @@ class MainDisplay:
 		self.canvas.bind("<Key>", self.press_keyboard)
 		self.label_score = Label()
 		self.display_buttons()
-		self.get_name_window = None
+		self.name_option_window = None
+		self.name_selection_window = None
+		self.name_compute_solution = None
+
+		self.solution = None		
 
 		self.window.mainloop()
 
 	def closing_option_window(self):
-		self.get_name_window.destroy()
-		self.get_name_window = None
+		self.name_option_window.destroy()
+		self.name_option_window = None
+
+	def closing_selection_window(self):
+		self.name_selection_window.destroy()
+		self.name_selection_window = None
 
 	def display_generate_options(self):
 
-		if self.get_name_window != None:
+		if self.name_option_window != None:
 			print("Une fenêtre d'option est déjà ouverte !")
-			self.get_name_window.focus_force()
+			self.name_option_window.focus_force()
 		else:
-			self.get_name_window = Toplevel(self.window)
-			self.get_name_window.protocol("WM_DELETE_WINDOW", self.closing_option_window)
+			self.name_option_window = Toplevel(self.window)
+			self.name_option_window.protocol("WM_DELETE_WINDOW", self.closing_option_window)
 
-			Label(self.get_name_window, text="nom du fichier:").pack()
-			file_name = Entry(self.get_name_window)
-			file_name.pack()
+			Label(self.name_option_window, text="nom du fichier:").grid(row = 0, column = 0)
+			file_name = Entry(self.name_option_window)
+			file_name.grid(row = 0, column = 1)
 
-			Label(self.get_name_window, text="hauteur grille:").pack()
-			height_scale = Scale(self.get_name_window, from_=5, to=50, orient=HORIZONTAL)
+			Label(self.name_option_window, text="hauteur grille:").grid(row = 1, column = 0)
+			height_scale = Scale(self.name_option_window, from_=5, to=50, orient=HORIZONTAL)
 			height_scale.set(20)
-			height_scale.pack()
+			height_scale.grid(row = 1, column = 1)
 
-			Label(self.get_name_window, text="largeur grille:").pack()
-			width_scale = Scale(self.get_name_window, from_=5, to=50, orient=HORIZONTAL)
+			Label(self.name_option_window, text="largeur grille:").grid(row = 2, column = 0)
+			width_scale = Scale(self.name_option_window, from_=5, to=50, orient=HORIZONTAL)
 			width_scale.set(20)
-			width_scale.pack()
+			width_scale.grid(row = 2, column = 1)
 
-			Label(self.get_name_window, text="proportion de mur:").pack()
-			wall_proportion_scale = Scale(self.get_name_window, from_=0, to=0.99, resolution=0.05, orient=HORIZONTAL)
+			Label(self.name_option_window, text="proportion de mur:").grid(row = 3, column = 0)
+			wall_proportion_scale = Scale(self.name_option_window, from_=0, to=0.99, resolution=0.05, orient=HORIZONTAL)
 			wall_proportion_scale.set(0.20)
-			wall_proportion_scale.pack()
+			wall_proportion_scale.grid(row = 3, column = 1)
 
 			# self.height = height_scale.get()
 			# self.width = width_scale.get()
 			# self.proba = wall_proportion_scale.get()
 			# self.path = file_name.get()
 
-			validate = Button(self.get_name_window, text = "Valider", command =lambda: self.generate(height_scale.get(),width_scale.get(),wall_proportion_scale.get(),file_name.get()))
-			# validate = Button(self.get_name_window, text = "Valider")
-			validate.pack()
+			validate = Button(self.name_option_window, text = "Valider", command =lambda: self.generate(height_scale.get(),width_scale.get(),wall_proportion_scale.get(),file_name.get()))
+			# validate = Button(self.name_option_window, text = "Valider")
+			validate.grid(columnspan = 2)
 		
+	def reset_position(self):
+		# reset robot position
+		self.grid_display.position_robot_x = self.grid_display.origin_robot_x
+		self.grid_display.position_robot_y = self.grid_display.origin_robot_y
+		self.move_robot(self.grid_display.position_robot_x, self.grid_display.position_robot_y)
+
+		# reset score
+		self.grid_display.score = [0,0,0,0]
+		self.display_score()
+		self.solution = None
+
+	def display_position_selection(self):
+		if self.name_selection_window != None:
+			print("Une fenêtre d'option est déjà ouverte !")
+			self.name_selection_window.focus_force()
+			return
+
+		result = messagebox.askquestion("Changer les positions de départ/arrivée", "Êtes-vous sûr de vouloir changer les positions de départ/arrivée ?\nCe changement va entrainer la réinitialisation du score", icon='warning')
+		if result == 'yes':
+			self._display_position_selection()
+
+
+
+	def _display_position_selection(self):
+		if self.name_selection_window != None:
+			print("Une fenêtre d'option est déjà ouverte !")
+			self.name_selection_window.focus_force()
+		else:
+			self.name_selection_window = Toplevel(self.window)
+			self.name_selection_window.protocol("WM_DELETE_WINDOW", self.closing_selection_window)
+
+			Label(self.name_selection_window, text="Veuillez choisir la position de départ avec le clic gauche et la position d'arrivée avec le clic droit.").grid()
+			
+			self.canvas.bind("<Button-1>", self.select_start_position_callback)
+			self.canvas.bind("<Button-3>", self.select_goal_position_callback)
+		
+			Button(self.name_selection_window, text="Valider", command=self.end_selection_start_goal_position).grid()
+			self.grid_display.score = [0,0,0,0]
+			self.display_score()
+
+	def select_start_position_callback(self,event):
+		if event.x < self.canvas.winfo_rootx() and event.x > self.label_score.winfo_rootx():
+			return
+		x = int(event.x // (self.height_canvas / self.grid_display.height))
+		y = int(event.y // (self.width_canvas / self.grid_display.width))
+		if (x != self.grid_display.goal_x or y != self.grid_display.goal_y) and "wall" not in self.grid_display.grid[y][x].type_location:
+			self.grid_display.origin_robot_x = x
+			self.grid_display.origin_robot_y = y
+			self.display_start()
+
+	def select_goal_position_callback(self,event):
+		if event.x < self.canvas.winfo_rootx() and event.x >= self.label_score.winfo_rootx():
+			return
+		x = int(event.x // (self.height_canvas / self.grid_display.height))
+		y = int(event.y // (self.width_canvas / self.grid_display.width))
+		if (x != self.grid_display.origin_robot_x or y != self.grid_display.origin_robot_y) and "wall" not in self.grid_display.grid[y][x].type_location:
+			self.grid_display.goal_x = x
+			self.grid_display.goal_y = y
+			self.display_goal()
+
+	def end_selection_start_goal_position(self):
+		self.canvas.unbind("<Button-1>")
+		self.canvas.unbind("<Button-3>")
+		self.move_robot(self.grid_display.origin_robot_x, self.grid_display.origin_robot_y)
+		self.name_selection_window.destroy()
+		self.name_selection_window = None
+
 
 
 	def display_buttons(self):
 		buttonLoad = Button(self.window, text="Charger grille existante", command=self.import_file)
-		buttonLoad.pack()
+		buttonLoad.grid(row = 0, column = 0, padx=10, pady=10)
 		buttonGenerate = Button(self.window, text="Générer nouvelle grille", command=self.display_generate_options)
-		buttonGenerate.pack()
+		buttonGenerate.grid(row = 1, column = 0, padx=10, pady=10)
 
 	def import_file(self):
 
@@ -82,10 +157,19 @@ class MainDisplay:
 
 		self.display_canvas(path)
 
+
+
 	def generate(self,height,width,proba,path):
 
-		self.get_name_window.destroy()
-		self.get_name_window = None
+		self.name_option_window.destroy()
+		self.name_option_window = None
+
+		reset = Button(self.window, text="Réinitialiser", command=self.reset_position)
+		reset.grid(row = 0, column = 1, padx=10, pady=10)
+		select_start_goal_position = Button(self.window, text="Selection start/end", command=self.display_position_selection)
+		select_start_goal_position.grid(row = 1, column = 1, padx=10, pady=10)
+		get_solution = Button(self.window, text="Calculer une solution", command=self.display_compute_solution)
+		get_solution.grid(row = 0, column = 2, rowspan = 2, padx=10, pady=10)
 
 		if len(path) == 0:
 			path = "generated_grid.madi"
@@ -97,6 +181,27 @@ class MainDisplay:
 		grid_generator.export_grid(path)
 
 		self.display_canvas(path)
+
+	def display_compute_solution(self):
+		if self.name_compute_solution != None:
+			print("Une fenêtre d'option est déjà ouverte !")
+			self.name_compute_solution.focus_force()
+		else:
+			self.name_compute_solution = Toplevel(self.window)
+			self.name_compute_solution.protocol("WM_DELETE_WINDOW", self.closing_option_window)
+
+			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.").grid()
+
+			Button(self.name_compute_solution, text="Dijkstra (juste avec le coup)", command=self.reset_position).grid()
+			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command=self.reset_position).grid()
+			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command=self.reset_position).grid()
+			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command=self.reset_position).grid()
+			Button(self.name_compute_solution, text="Réinitialiser", command=self.reset_position).grid()
+			Button(self.name_compute_solution, text="Réinitialiser", command=self.reset_position).grid()
+
+	def closing_option_window(self):
+		self.name_compute_solution.destroy()
+		self.name_compute_solution = None
 
 	def display_canvas(self, path):
 
@@ -120,8 +225,26 @@ class MainDisplay:
 				self.canvas.create_rectangle(j * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = color)
 				self.canvas.create_text(j * (self.width_canvas / self.grid_display.width) + 5, i * (self.height_canvas / self.grid_display.height) + 8, text = self.grid_display.grid[i][j].score)
 
-		self.canvas.pack()
+		self.canvas.grid(columnspan = 2)
 		self.display_score()
+		self.display_start()
+		self.display_robot()
+		self.display_goal()
+
+	def display_goal(self):
+		self.canvas.delete("goal")
+		j = self.grid_display.goal_x
+		i = self.grid_display.goal_y
+		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#FF6600', tags = "goal")
+		self.canvas.grid(columnspan = 2)
+		self.display_robot()
+
+	def display_start(self):
+		self.canvas.delete("start")
+		j = self.grid_display.origin_robot_x
+		i = self.grid_display.origin_robot_y
+		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#16992C', tags = "start")
+		self.canvas.grid(columnspan = 2)
 		self.display_robot()
 
 	def display_robot(self):
@@ -129,9 +252,11 @@ class MainDisplay:
 		j = self.grid_display.position_robot_x
 		i = self.grid_display.position_robot_y
 		self.canvas.create_oval((j + coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i +coef_reduce_circle) * (self.height_canvas / self.grid_display.height), (j + 1 - coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i + 1 - coef_reduce_circle) * (self.height_canvas / self.grid_display.height), fill = 'green', tags = "robot")
-		self.canvas.pack()		
+		self.canvas.grid(columnspan = 2)		
 
 	def move_robot(self, x, y):
+		self.grid_display.position_robot_x = x
+		self.grid_display.position_robot_y = y
 		self.canvas.delete("robot")
 		coef_reduce_circle = 0.2
 		self.canvas.create_oval((x + coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (y +coef_reduce_circle) * (self.height_canvas / self.grid_display.height), (x + 1 - coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (y + 1 - coef_reduce_circle) * (self.height_canvas / self.grid_display.height), fill = 'green', tags = "robot")
@@ -140,33 +265,71 @@ class MainDisplay:
 
 	def display_score(self):
 		self.label_score.destroy()
-		self.label_score = Label(self.window, text = "score : " + str(self.grid_display.score))
-		self.label_score.pack()
+		self.label_score = Label(self.window, text = "score : " + self.grid_display.display_score())
+		self.label_score.grid(columnspan = 2, padx=10, pady=10)
 
 	def press_keyboard(self, event):
 
+		can_move = False
 		keyboard_key = event.keysym
 		y = self.grid_display.position_robot_y
 		x = self.grid_display.position_robot_x
+		old_x = x
+		old_y = y
 
 		if(keyboard_key == "z"):
 			if not (y == 0 or "wall" in self.grid_display.grid[y - 1][x].type_location):
 				y = y - 1
+				can_move = True
 		elif(keyboard_key == "q"):
 			if not (x == 0 or "wall" in self.grid_display.grid[y][x - 1].type_location):
 				x = x - 1
+				can_move = True
 		elif(keyboard_key == "d"):
 			if not (x == (self.grid_display.width - 1) or "wall" in self.grid_display.grid[y][x + 1].type_location):
 				x = x + 1
+				can_move = True
 		elif(keyboard_key == "s"):
 			if not (y == (self.grid_display.height - 1) or "wall" in self.grid_display.grid[y + 1][x].type_location):
 				y = y + 1
+				can_move = True
 
-		self.grid_display.position_robot_y = y
-		self.grid_display.position_robot_x = x
-		self.grid_display.score += self.grid_display.grid[y][x].score
+		elif(keyboard_key == "space"):
+			if self.solution == None:
+				messagebox.showinfo("Aucune Solution", "Vous avez réinitialisé ou vous n'avez pas encore calculé une solution")
+				return
 
-		self.move_robot(x, y)
+			action = choose_a_solution()
+
+			if action == 0:
+				y = y - 1
+				can_move = True
+			elif action == 1:
+				y = y + 1
+				can_move = True
+			elif action == 2:
+				x = x - 1
+				can_move = True
+			elif action == 3:
+				x = x + 1
+				can_move = True
+
+		if(can_move):
+			self.grid_display.position_robot_y = y
+			self.grid_display.position_robot_x = x
+			self.grid_display.score[self.grid_display.grid[old_y][old_x].color] += self.grid_display.grid[old_y][old_x].score
+			# self.grid_display.score += self.grid_display.grid[y][x].score
+
+			self.move_robot(x, y)
+
+	def choose_a_solution(self):
+		position = self.grid_display.position_robot_x + self.grid_display.position_robot_y * self.grid_display.width
+		possibilities = np.cumsum(self.solution[position])
+		rand = np.random.rand()
+		for x in possibilities:
+			if rand < x:
+				return possibilities.index(x)
+		print("erreur ne somme pas à 1")
 
 
 window = MainDisplay()

@@ -20,8 +20,11 @@ class GeneratorGrid:
 		self.width = width
 		self.grid = []
 		self.position_robot = 0
+		self.origin_robot = 0
+		self.goal_position = 0
 		self.init_locations(proba_walls, proba_colors)
 		self.init_position_robot()
+		self.init_goal_position()
 
 	def init_locations(self, proba_walls, proba_colors):
 		for y in range(self.height):
@@ -64,7 +67,17 @@ class GeneratorGrid:
 					possible_positions.append(position)
 				position +=1
 		self.position_robot = random.choice(possible_positions)
+		self.origin_robot = self.position_robot
 
+	def init_goal_position(self):
+		position = 0
+		possible_positions = []
+		for y in range(self.height):
+			for x in range(self.width):
+				if self.grid[y][x].type_location in "normal" and position != self.position_robot:
+					possible_positions.append(position)
+				position +=1
+		self.goal_position = random.choice(possible_positions)
 
 	def export_grid(self, file_name):
 
@@ -73,7 +86,8 @@ class GeneratorGrid:
 			for y in range(self.height):
 				for x in range(self.width):
 					file.write(str(self.grid[y][x].score) + " " + str(self.grid[y][x].color) + " " + str(self.grid[y][x].type_location) + "\n")
-			file.write(str(self.position_robot))
+			file.write(str(self.position_robot) + "\n")
+			file.write(str(self.goal_position))
 
 
 		
@@ -86,13 +100,19 @@ class Grid_Project:
 		self.height = None
 		self.position_robot_x = None
 		self.position_robot_y = None
-		self.score = 0
+		self.score = [0,0,0,0]
+		self.origin_robot_x = None
+		self.origin_robot_y = None
+		self.goal_x = None
+		self.goal_y = None
 
 	def load_grid(self, file_name):
 		with open(file_name, "r") as file:
 			line = file.readline().split(" ")
 			self.height = int(line[0])
 			self.width = int(line[1])
+
+			self.score = [0,0,0,0]
 
 			for y in range(self.height):
 				self.grid.append([])
@@ -103,10 +123,26 @@ class Grid_Project:
 					type_location = str(line[2])
 					self.grid[y].append(Location(x, y, score, color, type_location = type_location))
 			position_robot = int(file.readline())
-			self.position_robot_x = position_robot % self.height
+			goal_position = int(file.readline())
+			self.position_robot_x = position_robot % self.width
 			self.position_robot_y = int(position_robot / self.width)
+			self.origin_robot_x = self.position_robot_x
+			self.origin_robot_y = self.position_robot_y
+			self.goal_x = goal_position % self.height
+			self.goal_y = int(goal_position / self.width)
 
+	def display_score(self):
+		return "vert:" + str(self.score[0]) + " bleu:" + str(self.score[1]) + " rouge:" + str(self.score[2]) + " noire:" + str(self.score[3])
 
+	def relocate_goal_position(self, x, y):
+		self.goal_x = x
+		self.goal_y = y
+
+	def relocate_start_position(self, x, y):
+		self.origin_robot_x = x
+		self.origin_robot_y = y
+		self.position_robot_x = x
+		self.position_robot_y = y
 
 
 class Location:
