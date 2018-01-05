@@ -34,7 +34,6 @@ class PDM:
     def get_reward_matrix(self, q, max_reward, multi_obj = False):
         # on crée le tableau des récompenses
         self.R = []
-
         if(multi_obj):
             for i in range(self.number_of_criteria):
                 self.R.append([])
@@ -49,7 +48,6 @@ class PDM:
 
                         else: # si c'est un mur ou une autre couleur
                             self.R[i].append(0)
-
 
 
         else:
@@ -215,7 +213,11 @@ class PDM:
             else:
                 Vt_1 = copy.copy(Vt)
 
-        return (self.get_best_policy_from_best_values(Vt, gamma), Vt, t)
+        directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+        best_policy = self.get_best_policy_from_best_values(Vt, gamma)
+        for i in range(len(best_policy)):
+            directions[i][best_policy[i]] = 1
+        return directions
 
         
     
@@ -253,7 +255,11 @@ class PDM:
 
         Vt = [self.R[s] + gamma * (np.dot(self.T[s,actions[s]],results)) for s in range(self.number_of_states)]
         
-        return (actions, Vt,t)
+        directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+        best_policy = self.get_best_policy_from_best_values(Vt, gamma)
+        for i in range(len(best_policy)):
+            directions[i][best_policy[i]] = 1
+        return directions
 
 
     def resolution_by_PL(self,gamma = 0.5):
@@ -297,15 +303,20 @@ class PDM:
 
             list_var_gurobi = []
             for v in self.model.getVars():
-                print(v.varName, v.x)
+                # print(v.varName, v.x)
                 list_var_gurobi.append(v.x)
 
-            print('Obj:', self.model.objVal)
-
-            return (self.get_best_policy_from_best_values(list_var_gurobi, gamma), Vt, t)
+            # print('Obj:', self.model.objVal)
+            directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+            best_policy = self.get_best_policy_from_best_values(list_var_gurobi, gamma)
+            for i in range(len(best_policy)):
+                directions[i][best_policy[i]] = 1
+            return directions
 
         except GurobiError:
             print("Erreur Gurobi pour l'optimisation linéaire")
+
+
 
     def PLMO(self, gamma = 0.5, pure_politic = False):
         if CAN_USE_PL:
@@ -319,43 +330,58 @@ class PDM:
             # Create a new model
             self.model = Model("pl_mo")
 
+            nb_var = 0
+
             # Create variables
-            F = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+            
             x = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
             for state in range(self.number_of_states):
                 for action in range(self.number_of_actions):
                     x[state][action] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+                    nb_var += 1
+
+            F = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
 
             fi = [0 for _ in range(self.number_of_criteria)]
             for i in range(self.number_of_criteria):
                 fi[i] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
+                nb_var += 1
 
             if pure_politic:
                 d = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
                 for state in range(self.number_of_states):
                     for action in range(self.number_of_actions):
-                        d[state][action] = self.model.addVar(0, 1, vtype=GRB.CONTINUOUS)
+                        d[state][action] = self.model.addVar(vtype=GRB.BINARY)
+                        nb_var += 1
 
             self.model.update()
 
             # Set objective
             self.model.setObjective(F, GRB.MAXIMIZE)
 
+            nb_constr = 0
+
             # Add constraint
             for i in range(self.number_of_criteria):
                 self.model.addConstr(F, GRB.LESS_EQUAL, fi[i])
                 self.model.addConstr(fi[i], GRB.EQUAL, quicksum([self.R[i][state] * x[state][action] for state in range(self.number_of_states) for action in range(self.number_of_actions)]))
+                nb_constr += 2
 
             for state in range(self.number_of_states):
+                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)]) - gamma * quicksum([(self.T[s2,action,state] * x[s2][action]) for s2 in range(self.number_of_states) for action in range(self.number_of_actions)]), GRB.EQUAL, 1)
+                nb_constr += 1
 
-                # TODO : trouver à quoi correspond le "mu"
-                self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)]) - gamma * quicksum([(self.T[state,action,s2] * x[s2][action]) for s2 in range(self.number_of_states) for action in range(self.number_of_actions)]), GRB.EQUAL, quicksum([x[state][action] for action in range(self.number_of_actions)]))
             
             if pure_politic:
                 for state in range(self.number_of_states):
                     self.model.addConstr(quicksum([d[state][action] for action in range(self.number_of_actions)]), GRB.LESS_EQUAL, 1)
+                    nb_constr += 1
                     for action in range(self.number_of_actions):
                         self.model.addConstr((1 - gamma) * x[state][action], GRB.LESS_EQUAL, d[state][action])
+                        nb_constr += 1
+
+            # print("nombre de variables : ", nb_var)
+            # print("nombre de contraintes : ", nb_constr)
 
             self.model.update()
 
@@ -368,24 +394,31 @@ class PDM:
                 print(v.varName, v.x)
                 list_var_gurobi.append(v.x)
 
-            print('Obj:', self.model.objVal)
+            directions = []
 
-            return (x, t)
+            for i in range(0, self.number_of_states * self.number_of_actions, self.number_of_actions):
+                tab_of_state = list_var_gurobi[i:i+self.number_of_actions]
+                tab_of_state = [x / sum(tab_of_state) for x in tab_of_state]
+                directions.append(tab_of_state)
+
+            # print('Obj:', self.model.objVal)
+            return directions
 
         except GurobiError:
             print("Erreur Gurobi pour l'optimisation linéaire")
 
 
 
-# g = GeneratorGrid(2, 2, proba_walls = 0)
-# pdm = PDM(g.grid, (1, 1)) 
-# print(pdm.resolution_by_PL())
-# print("----------------------")
-# print(pdm.iteration_by_policy())
-# print("----------------------")
-# print(pdm.iteration_by_value())
-
-
 g = GeneratorGrid(2, 2, proba_walls = 0)
-pdm = PDM(g.grid, (1, 1), multi_obj = True) 
-print(pdm.PLMO(pure_politic = False))
+pdm = PDM(g.grid, (1, 1)) 
+print(pdm.resolution_by_PL())
+print("----------------------")
+print(pdm.iteration_by_policy())
+print("----------------------")
+print(pdm.iteration_by_value())
+
+
+# g = GeneratorGrid(2, 3, proba_walls = 0)
+# pdm = PDM(g.grid, (1, 1), multi_obj = True) 
+# print(pdm.PLMO(pure_politic = False))
+# print(pdm.PLMO(pure_politic = True))
