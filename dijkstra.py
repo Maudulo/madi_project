@@ -150,19 +150,19 @@ class Dijkstra:
 
 			# direction vers le bas
 			if(cur_node[0] < next_node[0]):
-				self.directions[self.grid.height * cur_node[0] + cur_node[1]] = 1
+				self.directions[self.grid.width * cur_node[0] + cur_node[1]] = 1
 
 			# direction vers le haut
 			elif(cur_node[0] > next_node[0]):
-				self.directions[self.grid.height * cur_node[0] + cur_node[1]] = 0
+				self.directions[self.grid.width * cur_node[0] + cur_node[1]] = 0
 
 			# direction vers la droite
 			elif(cur_node[1] < next_node[1]):
-				self.directions[self.grid.height * cur_node[0] + cur_node[1]] = 3
+				self.directions[self.grid.width * cur_node[0] + cur_node[1]] = 3
 
 			# direction vers la gauche
 			else:
-				self.directions[self.grid.height * cur_node[0] + cur_node[1]] = 2
+				self.directions[self.grid.width * cur_node[0] + cur_node[1]] = 2
 
 			if cur_node not in self.goals:
 				self.goals.append(cur_node)
