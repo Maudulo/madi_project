@@ -29,6 +29,9 @@ class MainDisplay:
 		self.name_selection_window = None
 		self.name_compute_solution = None
 
+		self.p = 0.6
+		self.q = 1
+		self.max_reward = 1000
 		self.solution = None		
 
 		self.window.mainloop()
@@ -174,6 +177,7 @@ class MainDisplay:
 		get_solution = Button(self.window, text="Calculer une solution", command=self.display_compute_solution)
 		get_solution.grid(row = 0, column = 2, rowspan = 2, padx=10, pady=10)
 
+
 		if len(path) == 0:
 			path = "generated_grid.madi"
 
@@ -184,6 +188,7 @@ class MainDisplay:
 		grid_generator.export_grid(path)
 
 		self.display_canvas(path)
+		self.T = PDM(self.grid_display).get_transition_matrix(self.p, self.q, self.max_reward)
 
 	def display_compute_solution(self):
 		if self.name_compute_solution != None:
@@ -306,7 +311,6 @@ class MainDisplay:
 
 	def press_keyboard(self, event):
 
-		can_move = False
 		keyboard_key = event.keysym
 		y = self.grid_display.position_robot_y
 		x = self.grid_display.position_robot_x
@@ -316,19 +320,24 @@ class MainDisplay:
 		if(keyboard_key == "z"):
 			if not (y == 0 or "wall" in self.grid_display.grid[y - 1][x].type_location):
 				y = y - 1
-				can_move = True
 		elif(keyboard_key == "q"):
 			if not (x == 0 or "wall" in self.grid_display.grid[y][x - 1].type_location):
 				x = x - 1
-				can_move = True
 		elif(keyboard_key == "d"):
 			if not (x == (self.grid_display.width - 1) or "wall" in self.grid_display.grid[y][x + 1].type_location):
 				x = x + 1
-				can_move = True
 		elif(keyboard_key == "s"):
 			if not (y == (self.grid_display.height - 1) or "wall" in self.grid_display.grid[y + 1][x].type_location):
 				y = y + 1
-				can_move = True
+
+		elif(keyboard_key == "Up"):
+			x,y = self.move_with_bias(0)
+		elif(keyboard_key == "Down"):
+			x,y = self.move_with_bias(1)
+		elif(keyboard_key == "Left"):
+			x,y = self.move_with_bias(2)
+		elif(keyboard_key == "Right"):
+			x,y = self.move_with_bias(3)
 
 		elif(keyboard_key == "space"):
 			if self.solution == None:
@@ -340,21 +349,11 @@ class MainDisplay:
 			if self.grid_display.position_robot_x == self.grid_display.goal_x and self.grid_display.position_robot_y == self.grid_display.goal_y:
 				messagebox.showinfo("Fin", "Le robot a atteint son but")
 				return
-			elif action == 0:
-				y = y - 1
-				can_move = True
-			elif action == 1:
-				y = y + 1
-				can_move = True
-			elif action == 2:
-				x = x - 1
-				can_move = True
-			elif action == 3:
-				x = x + 1
-				can_move = True
+			else:
+				x,y = self.move_with_bias(action)
 			
 
-		if(can_move):
+		if not (old_x == x and old_y == y):
 			self.grid_display.position_robot_y = y
 			self.grid_display.position_robot_x = x
 			self.grid_display.score[self.grid_display.grid[old_y][old_x].color] += self.grid_display.grid[old_y][old_x].score
@@ -363,11 +362,22 @@ class MainDisplay:
 
 			self.move_robot(x, y)
 
+	def move_with_bias(self, direction):
+		position = self.grid_display.position_robot_x + self.grid_display.position_robot_y * self.grid_display.width
+		# print(self.solution)
+		possibilities = np.cumsum(self.T[position][direction])
+		rand = np.random.rand()
+		i = 0
+		for x in possibilities:
+			if rand < x:
+				return (i % self.grid_display.width), (int(i / self.grid_display.width))
+			i += 1
+		print("erreur ne somme pas à 1")
+
 	def choose_a_solution(self):
 		position = self.grid_display.position_robot_x + self.grid_display.position_robot_y * self.grid_display.width
 		# print(self.solution)
 		possibilities = np.cumsum(self.solution[position])
-		print(possibilities)
 		rand = np.random.rand()
 		i = 0
 		for x in possibilities:

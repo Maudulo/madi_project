@@ -102,7 +102,7 @@ class PDM:
 
 	def get_transition_matrix(self, p, q, max_reward, multi_obj = False, color_restrictive = False, consumption_only = False):
 		
-		self.get_reward_matrix(q, max_reward, multi_obj)
+		self.get_reward_matrix(q, max_reward, multi_obj, color_restrictive, consumption_only)
 
 		# on crée la matrice de transition
 		#self.T = np.zeros((self.number_of_states, self.number_of_actions, 4))
@@ -228,6 +228,8 @@ class PDM:
 					# case droite-centre
 					self.T[self.width*y+x, 3, self.width*y+(x+1)] = p+bias
 
+		return self.T
+
 
 	def get_best_policy_from_best_values(self, Vt, gamma):
 		return [np.argmax([self.R[s] + gamma * (np.dot(self.T[s,a], Vt)) for a in range(self.number_of_actions)]) for s in range(self.number_of_states)]
@@ -341,14 +343,17 @@ class PDM:
 			self.model.optimize()
 			t = (time.time() - start_time)
 
-			list_var_gurobi = []
-			for v in self.model.getVars():
-				# print(v.varName, v.x)
-				list_var_gurobi.append(v.x)
+			# list_var_gurobi = []
+			# for v in self.model.getVars():
+			# 	# print(v.varName, v.x)
+			# 	list_var_gurobi.append(v.x)
 
 			# print('Obj:', self.model.objVal)
-			directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
-			best_policy = self.get_best_policy_from_best_values(list_var_gurobi, gamma)
+			# directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+			# best_policy = self.get_best_policy_from_best_values(list_var_gurobi, gamma)
+
+			best_policy = self.get_best_policy_from_best_values([v.x for v in Vt], gamma)
+
 			for i in range(len(best_policy)):
 				directions[i][best_policy[i]] = 1
 			return directions
@@ -464,7 +469,7 @@ def _display_grid(grid):
 # print("----------------------")
 # print(pdm.iteration_by_value())
 
-g = GeneratorGrid(2, 2, proba_walls = 0)
-pdm = PDM(g, multi_obj = True) 
-print(pdm.PLMO(pure_politic = False))
+# g = GeneratorGrid(2, 2, proba_walls = 0)
+# pdm = PDM(g, multi_obj = True) 
+# print(pdm.PLMO(pure_politic = False))
 # print(pdm.PLMO(pure_politic = True))

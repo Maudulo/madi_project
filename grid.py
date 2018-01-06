@@ -136,7 +136,7 @@ class Grid_Project:
 			self.position_robot_y = int(position_robot / self.width)
 			self.origin_robot_x = self.position_robot_x
 			self.origin_robot_y = self.position_robot_y
-			self.goal_x = goal_position % self.height
+			self.goal_x = goal_position % self.width
 			self.goal_y = int(goal_position / self.width)
 
 
