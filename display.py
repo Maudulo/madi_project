@@ -264,18 +264,21 @@ class MainDisplay:
 
 			basevar = IntVar()
 			basevar.set(self._base_reward)
-			base_reward = Scale(self.name_parameters, from_=1, to=9, orient=HORIZONTAL,variable = basevar, resolution=1, tickinterval=3, label='base de la récompense', length=100)
+			base_reward = Scale(self.name_parameters, from_=1, to=9, orient=HORIZONTAL,variable = basevar, resolution=1, tickinterval=3, label='base de la récompense', length=100, command=lambda base: self.report_change(base, coefvar.get()))
 			base_reward.grid(row=4,column = 0)
 			coefvar = IntVar()
 			coefvar.set(self._coef_reward)
-			coef_reward = Scale(self.name_parameters, from_=0, to=10, orient=HORIZONTAL,variable = coefvar, resolution=1, tickinterval=5, label='fois 10 puissance:', length=100)
+			coef_reward = Scale(self.name_parameters, from_=0, to=10, orient=HORIZONTAL,variable = coefvar, resolution=1, tickinterval=5, label='fois 10 puissance:', length=100, command=lambda coef: self.report_change(basevar.get(),coef))
 			coef_reward.grid(row=4,column = 1)
 			coef_reward.set(self._coef_reward)
-
-			total = IntVar()
-			Label(self.name_parameters, textvariable = str(basevar*10**coefvar)).grid(row=5, columnspan=2)
+			self.label_reward = StringVar()
+			Label(self.name_parameters, textvariable=self.label_reward).grid(row=5,columnspan=2)
+			self.report_change(basevar.get(),coefvar.get())
 
 			validate = Button(self.name_parameters, text = "Valider", command =lambda: self._update_parameters(gamma.get(), p.get(), q.get(),base_reward.get(),coef_reward.get())).grid(row=6,columnspan=2)
+
+	def report_change(self,base,coef):
+		self.label_reward.set(str(int(base)*10**int(coef)))
 
 	def _update_parameters(self, gamma,p,q,base_reward, coef_reward):
 		self.name_parameters.destroy()
