@@ -362,7 +362,6 @@ class PDM:
 		try:
 			# Create a new model
 			self.model = Model("pl_mo")
-
 			nb_var = 0
 
 			# Create variables
@@ -401,8 +400,7 @@ class PDM:
 				nb_constr += 2
 
 			for state in range(self.number_of_states):
-				self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)]) - gamma * quicksum([(self.T[s2,action,state] * x[s2][action]) for s2 in range(self.number_of_states) for action in range(self.number_of_actions)]), GRB.EQUAL, 1)
-				nb_constr += 1
+				self.model.addConstr(quicksum([x[state][action] for action in range(self.number_of_actions)]) - gamma * quicksum([(self.T[s2,action,state] * x[s2][action]) for s2 in range(self.number_of_states) for action in range(self.number_of_actions)]), GRB.EQUAL, 1 / self.number_of_criteria)
 
 			
 			if pure_politic:
@@ -442,16 +440,16 @@ class PDM:
 
 
 
-g = GeneratorGrid(2, 2, proba_walls = 0)
-pdm = PDM(g.grid, (1, 1)) 
-print(pdm.resolution_by_PL())
-print("----------------------")
-print(pdm.iteration_by_policy())
-print("----------------------")
-print(pdm.iteration_by_value())
+# g = GeneratorGrid(2, 2, proba_walls = 0)
+# pdm = PDM(g.grid, (1, 1)) 
+# print(pdm.resolution_by_PL())
+# print("----------------------")
+# print(pdm.iteration_by_policy())
+# print("----------------------")
+# print(pdm.iteration_by_value())
 
 
-# g = GeneratorGrid(2, 3, proba_walls = 0)
-# pdm = PDM(g.grid, (1, 1), multi_obj = True) 
+g = GeneratorGrid(2, 3, proba_walls = 0)
+pdm = PDM(g, (1, 1), multi_obj = True) 
 # print(pdm.PLMO(pure_politic = False))
-# print(pdm.PLMO(pure_politic = True))
+print(pdm.PLMO(pure_politic = True))
