@@ -1,10 +1,12 @@
 import sys
 
 from grid import *
+from dijkstra import *
+from PDM import *
+
 from tkinter import *
 from tkinter.filedialog import *
 from tkinter import messagebox
-
 
 
 class MainDisplay:
@@ -192,13 +194,39 @@ class MainDisplay:
 			self.name_compute_solution.protocol("WM_DELETE_WINDOW", self.closing_option_window)
 
 			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.").grid()
+			
+			Button(self.name_compute_solution, text="Dijkstra (juste avec le coup)", command =lambda: self.getSolution(politic_type = "dijkstra")).grid()
+			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_valeur")).grid()
+			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_policy")).grid()
+			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_PL")).grid()
+			Button(self.name_compute_solution, text="MOMDP (politique mixte)", command =lambda: self.getSolution(politic_type = "MOMDP_mixte")).grid()
+			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid()
 
-			Button(self.name_compute_solution, text="Dijkstra (juste avec le coup)", command=self.reset_position).grid()
-			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command=self.reset_position).grid()
-			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command=self.reset_position).grid()
-			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command=self.reset_position).grid()
-			Button(self.name_compute_solution, text="Réinitialiser", command=self.reset_position).grid()
-			Button(self.name_compute_solution, text="Réinitialiser", command=self.reset_position).grid()
+	def getSolution(self, politic_type = ""):
+		if(politic_type == " PDM_valeur"):
+			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+			self.solution = pdm.iteration_by_value()
+		elif politic_type == "PDM_policy":
+			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+			self.solution = pdm.iteration_by_policy()
+		elif politic_type == "PDM_PL":
+			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+			self.solution = pdm.resolution_by_PL()
+		elif politic_type == "MOMDP_mixte":
+			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+			self.solution = pdm.PLMO(pure_politic = False)
+		elif politic_type == "MOMDP_pure":
+			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+			self.solution = pdm.resolution_by_PL(pure_politic = True)
+		else:
+			d = Dijkstra(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x])
+			d.politic_decision()
+			self.solution = d.getDirections()
+
+		messagebox.showinfo("Solution calculée", "La solution est calculée.\nVeuillez appuyer sur SPACE pour la visualiser")
+		return
+
+
 
 	def closing_option_window(self):
 		self.name_compute_solution.destroy()
@@ -300,9 +328,11 @@ class MainDisplay:
 				messagebox.showinfo("Aucune Solution", "Vous avez réinitialisé ou vous n'avez pas encore calculé une solution")
 				return
 
-			action = choose_a_solution()
-
-			if action == 0:
+			action = self.choose_a_solution()
+			if self.grid_display.position_robot_x == self.grid_display.goal_x and self.grid_display.position_robot_y == self.grid_display.goal_y:
+				messagebox.showinfo("Fin", "Le robot a atteint son but")
+				return
+			elif action == 0:
 				y = y - 1
 				can_move = True
 			elif action == 1:
@@ -314,6 +344,7 @@ class MainDisplay:
 			elif action == 3:
 				x = x + 1
 				can_move = True
+			
 
 		if(can_move):
 			self.grid_display.position_robot_y = y
@@ -326,11 +357,13 @@ class MainDisplay:
 
 	def choose_a_solution(self):
 		position = self.grid_display.position_robot_x + self.grid_display.position_robot_y * self.grid_display.width
+		print(self.solution)
 		possibilities = np.cumsum(self.solution[position])
+		print(possibilities)
 		rand = np.random.rand()
 		for x in possibilities:
 			if rand < x:
-				return possibilities.index(x)
+				return self.solution[x]
 		print("erreur ne somme pas à 1")
 
 

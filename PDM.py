@@ -19,10 +19,10 @@ import os
 
 class PDM:
 
-	def __init__(self, grid, goal, p = 0.6, q=1, max_reward = 1000, multi_obj = False):
+	def __init__(self, grid, p = 0.6, q=1, max_reward = 1000, multi_obj = False):
 		self.grid = grid
 		self.board = grid.grid
-		self.goal = goal
+		self.goal = [self.grid.goal_y, self.grid.goal_x]
 		self.width = len(self.board[0])
 		self.height = len(self.board)
 		self.number_of_states = self.width * self.height
@@ -103,10 +103,10 @@ class PDM:
 		# on crée la matrice de transition
 		#self.T = np.zeros((self.number_of_states, self.number_of_actions, 4))
 		self.T = np.zeros((self.number_of_states, self.number_of_actions, self.number_of_states)) 
-		print(self.T.shape)
+		#print(self.T.shape)
 		for y in range(self.height):
 			for x in range(self.width):
-				print(y, " ", x)
+				#print(y, " ", x)
 				##############################################
 				############ vers le haut ####################
 				##############################################
@@ -422,7 +422,7 @@ class PDM:
 
 			list_var_gurobi = []
 			for v in self.model.getVars():
-				print(v.varName, v.x)
+				#print(v.varName, v.x)
 				list_var_gurobi.append(v.x)
 
 			directions = []
@@ -441,15 +441,19 @@ class PDM:
 
 
 # g = GeneratorGrid(2, 2, proba_walls = 0)
-# pdm = PDM(g.grid, (1, 1)) 
-# print(pdm.resolution_by_PL())
-# print("----------------------")
-# print(pdm.iteration_by_policy())
-# print("----------------------")
-# print(pdm.iteration_by_value())
+# g.export_grid("test.madi")
+# grid2 = Grid_Project()
+# grid2.load_grid("test.madi")
+
+# # pdm = PDM(g) 
+# # print(pdm.resolution_by_PL())
+# # print("----------------------")
+# # print(pdm.iteration_by_policy())
+# # print("----------------------")
+# # print(pdm.iteration_by_value())
 
 
-g = GeneratorGrid(2, 3, proba_walls = 0)
-pdm = PDM(g, (1, 1), multi_obj = True) 
-# print(pdm.PLMO(pure_politic = False))
-print(pdm.PLMO(pure_politic = True))
+# # g = GeneratorGrid(2, 3, proba_walls = 0)
+# pdm = PDM(grid2, multi_obj = True) 
+# # print(pdm.PLMO(pure_politic = False))
+# print(pdm.PLMO(pure_politic = True))
