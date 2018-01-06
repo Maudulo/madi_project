@@ -491,28 +491,41 @@ def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], tria
 			print("essai : ", trial)
 			g = GeneratorGrid(a,b,proba_walls=0.2)
 
-			g1 = PDM(g, p=p)
-			t = time.time()
-			g1.iteration_by_value(gamma=gam)
-			a1 = (time.time() - t)
-			results[i,0] += a1
+			# g1 = PDM(g, p=p)
+			# t = time.time()
+			# g1.iteration_by_value(gamma=gam)
+			# a1 = (time.time() - t)
+			# results[i,0] += a1
 
-			g2 = PDM(g, p=p)
-			t = time.time()
-			g2.iteration_by_policy(gamma = gam)
-			a2 = (time.time() - t)
-			results[i,1] += a2
+			# g2 = PDM(g, p=p)
+			# t = time.time()
+			# g2.iteration_by_policy(gamma = gam)
+			# a2 = (time.time() - t)
+			# results[i,1] += a2
 
 			# g3 = PDM(g, p=p)
 			# t = time.time()
-			# g3.resolution_by_PL(gamma=gamma)
+			# g3.resolution_by_PL(gamma = gam)
 			# a3 = (time.time() - t)
 			# results[i,2] += a3
+
+			g4 = PDM(g, p=p, multi_obj = True)
+			t = time.time()
+			g4.PLMO(gamma = gam, pure_politic = False)
+			a4 = (time.time() - t)
+			results[i,0] += a4
+
+			g5 = PDM(g, p=p, multi_obj = True)
+			t = time.time()
+			g5.PLMO(gamma = gam, pure_politic = True)
+			a5 = (time.time() - t)
+			results[i,1] += a5
+
 
 	# do the mean
 	results /= trials
 
 	return results
 
-# np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
-# print(first_test(gam=0.9, p=0.6, size = [(10,10)]))
+np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
+print(first_test(gam=0.9, p=0.6, size = [(5, 5)], trials = 5))
