@@ -203,17 +203,26 @@ class MainDisplay:
 			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid()
 
 	def getSolution(self, politic_type = ""):
-		pdm = PDM(self.grid_display) 
 		if politic_type == "PDM_valeur":
+			pdm = PDM(self.grid_display) 
 			self.solution = pdm.iteration_by_value()
+			 
 		elif politic_type == "PDM_policy":
+			pdm = PDM(self.grid_display)
 			self.solution = pdm.iteration_by_policy()
+			
 		elif politic_type == "PDM_PL":
+			pdm = PDM(self.grid_display) 
 			self.solution = pdm.resolution_by_PL()
+
 		elif politic_type == "MOMDP_mixte":
+			pdm = PDM(self.grid_display, multi_obj = True) 
 			self.solution = pdm.PLMO(pure_politic = False)
+
 		elif politic_type == "MOMDP_pure":
+			pdm = PDM(self.grid_display, multi_obj = True) 
 			self.solution = pdm.resolution_by_PL(pure_politic = True)
+			
 		elif politic_type == "dijkstra":
 			d = Dijkstra(self.grid_display)
 			d.politic_decision()

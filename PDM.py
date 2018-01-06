@@ -3,6 +3,7 @@ from enum import Enum
 from grid import *
 import numpy as np
 import copy
+import sys
 
 import importlib
 from importlib import util
@@ -19,7 +20,7 @@ import os
 
 class PDM:
 
-	def __init__(self, grid, p = 0.6, q=1, max_reward = 1000, multi_obj = False):
+	def __init__(self, grid, p = 0.6, q=1, max_reward = 1000, multi_obj = False, color_restrictive = False, consumption_only = False):
 		self.grid = grid
 		self.board = grid.grid
 		self.goal = [self.grid.goal_y, self.grid.goal_x]
@@ -48,6 +49,9 @@ class PDM:
 							self.R[i].append(-(pos.score))
 
 						else: # si c'est un mur ou une autre couleur
+							# if(pos.type_location == "wall"):
+							# 	self.R[i].append(-(sys.maxsize + 1))
+							# else:
 							self.R[i].append(0)
 
 
@@ -61,7 +65,7 @@ class PDM:
 						self.R.append(-(pos.score)**q)
 
 					else: # si c'est un mur
-						self.R.append(0)
+						self.R.append(-(sys.maxsize + 1))
 
 
 
@@ -80,7 +84,7 @@ class PDM:
 						self.R.append(-color_value[pos.color]**q)
 
 					else: # si c'est un mur
-						self.R.append(0)
+						self.R.append(-(sys.maxsize + 1))
 
 		
 		else:
@@ -93,10 +97,10 @@ class PDM:
 						self.R.append(-(pos.color+1)**q)
 
 					else: # si c'est un mur
-						self.R.append(0)
+						self.R.append(-(sys.maxsize + 1))
 
 
-	def get_transition_matrix(self, p, q, max_reward, multi_obj = False):
+	def get_transition_matrix(self, p, q, max_reward, multi_obj = False, color_restrictive = False, consumption_only = False):
 		
 		self.get_reward_matrix(q, max_reward, multi_obj)
 
@@ -424,18 +428,8 @@ class PDM:
 			t = (time.time() - start_time)
 
 			list_var_gurobi = []
-			for v in self.model.getVars():
-				#print(v.varName, v.x)
-				list_var_gurobi.append(v.x)
+			directions = [[var.x/sum([a.x for a in tab]) for var in tab]for tab in x]
 
-			directions = []
-
-			for i in range(0, self.number_of_states * self.number_of_actions, self.number_of_actions):
-				tab_of_state = list_var_gurobi[i:i+self.number_of_actions]
-				tab_of_state = [x / sum(tab_of_state) for x in tab_of_state]
-				directions.append(tab_of_state)
-
-			# print('Obj:', self.model.objVal)
 			return directions
 
 		except GurobiError:
@@ -470,7 +464,7 @@ def _display_grid(grid):
 # print("----------------------")
 # print(pdm.iteration_by_value())
 
-# # g = GeneratorGrid(2, 3, proba_walls = 0)
-# pdm = PDM(grid2, multi_obj = True) 
-# # print(pdm.PLMO(pure_politic = False))
+g = GeneratorGrid(2, 2, proba_walls = 0)
+pdm = PDM(g, multi_obj = True) 
+print(pdm.PLMO(pure_politic = False))
 # print(pdm.PLMO(pure_politic = True))
