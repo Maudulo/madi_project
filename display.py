@@ -200,7 +200,8 @@ class MainDisplay:
 
 			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.").grid()
 			
-			Button(self.name_compute_solution, text="Dijkstra (juste avec le coup)", command =lambda: self.getSolution(politic_type = "dijkstra")).grid()
+			Button(self.name_compute_solution, text="PDM (consommation pure)", command =lambda: self.getSolution(politic_type = "consommation")).grid()
+			Button(self.name_compute_solution, text="PDM (ordre couleurs)", command =lambda: self.getSolution(politic_type = "couleur")).grid()
 			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_valeur")).grid()
 			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_policy")).grid()
 			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_PL")).grid()
@@ -210,28 +211,32 @@ class MainDisplay:
 	def getSolution(self, politic_type = ""):
 		if politic_type == "PDM_valeur":
 			pdm = PDM(self.grid_display) 
-			self.solution = pdm.iteration_by_value()
+			self.solution = pdm.iteration_by_value(gamma = 0.95)
 			 
 		elif politic_type == "PDM_policy":
 			pdm = PDM(self.grid_display)
-			self.solution = pdm.iteration_by_policy()
+			self.solution = pdm.iteration_by_policy(gamma = 0.95)
 			
 		elif politic_type == "PDM_PL":
 			pdm = PDM(self.grid_display) 
-			self.solution = pdm.resolution_by_PL()
+			self.solution = pdm.resolution_by_PL(gamma = 0.95)
 
 		elif politic_type == "MOMDP_mixte":
 			pdm = PDM(self.grid_display, multi_obj = True) 
-			self.solution = pdm.PLMO(pure_politic = False)
+			self.solution = pdm.PLMO(pure_politic = False, gamma = 0.95)
 
 		elif politic_type == "MOMDP_pure":
 			pdm = PDM(self.grid_display, multi_obj = True) 
-			self.solution = pdm.resolution_by_PL(pure_politic = True)
+			self.solution = pdm.PLMO(pure_politic = True, gamma = 0.95)
 			
-		elif politic_type == "dijkstra":
-			d = Dijkstra(self.grid_display)
-			d.politic_decision()
-			self.solution = d.getDirections()
+		elif politic_type == "consommation":
+			pdm = PDM(self.grid_display, consumption_only = True, gamma = 0.95) 
+			self.solution = pdm.iteration_by_value()
+
+		elif politic_type == "couleur":
+			pdm = PDM(self.grid_display, color_restrictive = True, gamma = 0.5) 
+			self.solution = pdm.iteration_by_value()
+
 		else:
 			print("Erreur fatale pas de fonction de ce nom\n", politic_type)
 

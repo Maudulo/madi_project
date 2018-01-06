@@ -349,7 +349,7 @@ class PDM:
 			# 	list_var_gurobi.append(v.x)
 
 			# print('Obj:', self.model.objVal)
-			# directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
+			directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
 			# best_policy = self.get_best_policy_from_best_values(list_var_gurobi, gamma)
 
 			best_policy = self.get_best_policy_from_best_values([v.x for v in Vt], gamma)
