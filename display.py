@@ -28,10 +28,14 @@ class MainDisplay:
 		self.name_option_window = None
 		self.name_selection_window = None
 		self.name_compute_solution = None
+		self.name_parameters = None
 
 		self.p = 0.6
 		self.q = 1
-		self.max_reward = 1000
+		self.gamma = 0.9
+		self.max_reward = 10000
+		self._base_reward = 1
+		self._coef_reward = 4
 		self.solution = None		
 
 		self.window.mainloop()
@@ -40,9 +44,18 @@ class MainDisplay:
 		self.name_option_window.destroy()
 		self.name_option_window = None
 
+	def closing_compute_window(self):
+		self.name_compute_solution.destoy()
+		self.name_compute_solution = None
+
 	def closing_selection_window(self):
 		self.name_selection_window.destroy()
 		self.name_selection_window = None
+
+	def closing_parameters(self):
+		self.name_parameters.destroy()
+		self.name_parameters = None
+
 
 	def display_generate_options(self):
 
@@ -51,6 +64,7 @@ class MainDisplay:
 			self.name_option_window.focus_force()
 		else:
 			self.name_option_window = Toplevel(self.window)
+			self.name_option_window.resizable(False, False)
 			self.name_option_window.protocol("WM_DELETE_WINDOW", self.closing_option_window)
 
 			Label(self.name_option_window, text="nom du fichier:").grid(row = 0, column = 0)
@@ -93,13 +107,24 @@ class MainDisplay:
 		self.display_score()
 		self.solution = None
 
+	def get_to_start_position(self):
+		# reset robot position
+		self.grid_display.position_robot_x = self.grid_display.origin_robot_x
+		self.grid_display.position_robot_y = self.grid_display.origin_robot_y
+		self.move_robot(self.grid_display.position_robot_x, self.grid_display.position_robot_y)
+
+		# reset score
+		self.grid_display.score = [0,0,0,0]
+		self.grid_display.color_visited = [0,0,0,0]
+		self.display_score()
+
 	def display_position_selection(self):
 		if self.name_selection_window != None:
 			print("Une fenêtre d'option est déjà ouverte !")
 			self.name_selection_window.focus_force()
 			return
 
-		result = messagebox.askquestion("Changer les positions de départ/arrivée", "Êtes-vous sûr de vouloir changer les positions de départ/arrivée ?\nCe changement va entrainer la réinitialisation du score", icon='warning')
+		result = messagebox.askquestion("Changer les positions de départ/arrivée", "Êtes-vous sûr de vouloir changer les positions de départ/arrivée ?\nCe changement va entrainer la réinitialisation du score et de la solution", icon='warning')
 		if result == 'yes':
 			self._display_position_selection()
 
@@ -111,6 +136,7 @@ class MainDisplay:
 			self.name_selection_window.focus_force()
 		else:
 			self.name_selection_window = Toplevel(self.window)
+			self.name_selection_window.resizable(False, False)
 			self.name_selection_window.protocol("WM_DELETE_WINDOW", self.closing_selection_window)
 
 			Label(self.name_selection_window, text="Veuillez choisir la position de départ avec le clic gauche et la position d'arrivée avec le clic droit.").grid()
@@ -119,6 +145,7 @@ class MainDisplay:
 			self.canvas.bind("<Button-3>", self.select_goal_position_callback)
 		
 			Button(self.name_selection_window, text="Valider", command=self.end_selection_start_goal_position).grid()
+			self.solution = None
 			self.grid_display.score = [0,0,0,0]
 			self.display_score()
 
@@ -171,11 +198,15 @@ class MainDisplay:
 		self.name_option_window = None
 
 		reset = Button(self.window, text="Réinitialiser", command=self.reset_position)
-		reset.grid(row = 0, column = 1, padx=10, pady=10)
+		reset.grid(row = 0, column = 1, padx=0.1, pady=5)
+		get_to_start_position = Button(self.window, text="Début", command=self.get_to_start_position)
+		get_to_start_position.grid(row = 0, column = 2, padx=0.1, pady=5)
 		select_start_goal_position = Button(self.window, text="Selection start/end", command=self.display_position_selection)
-		select_start_goal_position.grid(row = 1, column = 1, padx=10, pady=10)
+		select_start_goal_position.grid(row = 1, column = 1, columnspan=2, padx=10, pady=10)
 		get_solution = Button(self.window, text="Calculer une solution", command=self.display_compute_solution)
-		get_solution.grid(row = 0, column = 2, rowspan = 2, padx=10, pady=10)
+		get_solution.grid(row = 0, column = 3, padx=10, pady=10)
+		change_parameters = Button(self.window, text="Changer les paramètres", command=self.display_parameters)
+		change_parameters.grid(row = 1, column = 3, padx=10, pady=10)
 
 
 		if len(path) == 0:
@@ -196,7 +227,8 @@ class MainDisplay:
 			self.name_compute_solution.focus_force()
 		else:
 			self.name_compute_solution = Toplevel(self.window)
-			self.name_compute_solution.protocol("WM_DELETE_WINDOW", self.closing_option_window)
+			self.name_compute_solution.resizable(False, False)
+			self.name_compute_solution.protocol("WM_DELETE_WINDOW", self.closing_compute_window)
 
 			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.").grid()
 			
@@ -208,34 +240,87 @@ class MainDisplay:
 			Button(self.name_compute_solution, text="MOMDP (politique mixte)", command =lambda: self.getSolution(politic_type = "MOMDP_mixte")).grid()
 			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid()
 
+	def display_parameters(self):
+		if self.name_parameters != None:
+			print("Une fenêtre d'option est déjà ouverte !")
+			self.name_parameters.focus_force()
+		else:
+			self.name_parameters = Toplevel(self.window)
+			self.name_parameters.resizable(False, False)
+			self.name_parameters.protocol("WM_DELETE_WINDOW", self.closing_parameters)
+
+			Label(self.name_parameters, text="Veuillez choisir Les nouveaux paramètres").grid(row = 0,columnspan=2)
+			gamma = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='Gamma', length=200)
+			gamma.grid(row=1,columnspan=2)
+			gamma.set(self.gamma)
+
+			p = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='P', length=200)
+			p.grid(row=2,columnspan=2)
+			p.set(self.p)
+
+			q = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='Q', length=200)
+			q.grid(row=3,columnspan=2)
+			q.set(self.q)
+
+			basevar = IntVar()
+			basevar.set(self._base_reward)
+			base_reward = Scale(self.name_parameters, from_=1, to=9, orient=HORIZONTAL,variable = basevar, resolution=1, tickinterval=3, label='base de la récompense', length=100)
+			base_reward.grid(row=4,column = 0)
+			coefvar = IntVar()
+			coefvar.set(self._coef_reward)
+			coef_reward = Scale(self.name_parameters, from_=0, to=10, orient=HORIZONTAL,variable = coefvar, resolution=1, tickinterval=5, label='fois 10 puissance:', length=100)
+			coef_reward.grid(row=4,column = 1)
+			coef_reward.set(self._coef_reward)
+
+			total = IntVar()
+			Label(self.name_parameters, textvariable = str(basevar*10**coefvar)).grid(row=5, columnspan=2)
+
+			validate = Button(self.name_parameters, text = "Valider", command =lambda: self._update_parameters(gamma.get(), p.get(), q.get(),base_reward.get(),coef_reward.get())).grid(row=6,columnspan=2)
+
+	def _update_parameters(self, gamma,p,q,base_reward, coef_reward):
+		self.name_parameters.destroy()
+		self.name_parameters = None
+		self.gamma = gamma
+		self.p = p
+		self.q = q
+		self._base_reward = base_reward
+		self._coef_reward = coef_reward
+		self.max_reward = base_reward * 10**coef_reward
+		self.T = PDM(self.grid_display).get_transition_matrix(self.p, self.q, self.max_reward)
+
 	def getSolution(self, politic_type = ""):
+		p = self.p
+		q = self.q
+		gamma = self.gamma
+		max_reward = self.max_reward
+
 		if politic_type == "PDM_valeur":
-			pdm = PDM(self.grid_display) 
-			self.solution = pdm.iteration_by_value(gamma = 0.95)
+			pdm = PDM(self.grid_display, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.iteration_by_value(gamma = gamma)
 			 
 		elif politic_type == "PDM_policy":
-			pdm = PDM(self.grid_display)
-			self.solution = pdm.iteration_by_policy(gamma = 0.95)
+			pdm = PDM(self.grid_display, max_reward = max_reward, p = p, q = q)
+			self.solution = pdm.iteration_by_policy(gamma = gamma)
 			
 		elif politic_type == "PDM_PL":
-			pdm = PDM(self.grid_display) 
-			self.solution = pdm.resolution_by_PL(gamma = 0.95)
+			pdm = PDM(self.grid_display, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.resolution_by_PL(gamma = gamma)
 
 		elif politic_type == "MOMDP_mixte":
-			pdm = PDM(self.grid_display, multi_obj = True) 
-			self.solution = pdm.PLMO(pure_politic = False, gamma = 0.95)
+			pdm = PDM(self.grid_display, multi_obj = True, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.PLMO(pure_politic = False, gamma = gamma)
 
 		elif politic_type == "MOMDP_pure":
-			pdm = PDM(self.grid_display, multi_obj = True) 
-			self.solution = pdm.PLMO(pure_politic = True, gamma = 0.95)
+			pdm = PDM(self.grid_display, multi_obj = True, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.PLMO(pure_politic = True, gamma = gamma)
 			
 		elif politic_type == "consommation":
-			pdm = PDM(self.grid_display, consumption_only = True, gamma = 0.95) 
-			self.solution = pdm.iteration_by_value()
+			pdm = PDM(self.grid_display, consumption_only = True, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.iteration_by_value(gamma = gamma)
 
 		elif politic_type == "couleur":
-			pdm = PDM(self.grid_display, color_restrictive = True, gamma = 0.5) 
-			self.solution = pdm.iteration_by_value()
+			pdm = PDM(self.grid_display, color_restrictive = True, max_reward = max_reward, p = p, q = q) 
+			self.solution = pdm.iteration_by_value(gamma = gamma)
 
 		else:
 			print("Erreur fatale pas de fonction de ce nom\n", politic_type)
@@ -244,10 +329,6 @@ class MainDisplay:
 		return
 
 
-
-	def closing_option_window(self):
-		self.name_compute_solution.destroy()
-		self.name_compute_solution = None
 
 	def display_canvas(self, path):
 
@@ -271,7 +352,7 @@ class MainDisplay:
 				self.canvas.create_rectangle(j * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = color)
 				self.canvas.create_text(j * (self.width_canvas / self.grid_display.width) + 5, i * (self.height_canvas / self.grid_display.height) + 8, text = self.grid_display.grid[i][j].score)
 
-		self.canvas.grid(columnspan = 3)
+		self.canvas.grid(columnspan = 4)
 		self.display_score()
 		self.display_start()
 		self.display_robot()
@@ -282,7 +363,7 @@ class MainDisplay:
 		j = self.grid_display.goal_x
 		i = self.grid_display.goal_y
 		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#FF6600', tags = "goal")
-		self.canvas.grid(columnspan = 3)
+		self.canvas.grid(columnspan = 4)
 		self.display_robot()
 
 	def display_start(self):
@@ -290,7 +371,7 @@ class MainDisplay:
 		j = self.grid_display.origin_robot_x
 		i = self.grid_display.origin_robot_y
 		self.canvas.create_rectangle((j+0.35) * (self.width_canvas / self.grid_display.width), i * (self.height_canvas / self.grid_display.height), (j + 1) * (self.width_canvas / self.grid_display.width), (i + 1) * (self.height_canvas / self.grid_display.height), fill = '#16992C', tags = "start")
-		self.canvas.grid(columnspan = 3)
+		self.canvas.grid(columnspan = 4)
 		self.display_robot()
 
 	def display_robot(self):
@@ -298,7 +379,7 @@ class MainDisplay:
 		j = self.grid_display.position_robot_x
 		i = self.grid_display.position_robot_y
 		self.canvas.create_oval((j + coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i +coef_reduce_circle) * (self.height_canvas / self.grid_display.height), (j + 1 - coef_reduce_circle) * (self.width_canvas / self.grid_display.width), (i + 1 - coef_reduce_circle) * (self.height_canvas / self.grid_display.height), fill = 'green', tags = "robot")
-		self.canvas.grid(columnspan = 3)		
+		self.canvas.grid(columnspan = 4)		
 
 	def move_robot(self, x, y):
 		self.grid_display.position_robot_x = x
@@ -312,7 +393,7 @@ class MainDisplay:
 	def display_score(self):
 		self.label_score.destroy()
 		self.label_score = Label(self.window, text = "score : " + self.grid_display.display_score())
-		self.label_score.grid(columnspan = 3, padx=10, pady=10)
+		self.label_score.grid(columnspan = 4, padx=10, pady=10)
 
 	def press_keyboard(self, event):
 

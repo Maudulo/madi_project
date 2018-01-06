@@ -30,7 +30,7 @@ class PDM:
 		self.number_of_actions = 4 # (haut, bas, gauche droite)
 		self.number_of_criteria = 4
 		#self.objectif = 2 # indice de la position objectif
-		self.get_transition_matrix(p, q, max_reward, multi_obj)
+		self.get_transition_matrix(p, q, max_reward, multi_obj, color_restrictive, consumption_only)
 		
 
 	def get_reward_matrix(self, q = 1, max_reward = 1000, multi_obj = False, color_restrictive = False, consumption_only = False):
@@ -50,7 +50,7 @@ class PDM:
 
 						else: # si c'est un mur ou une autre couleur
 							# if(pos.type_location == "wall"):
-							# 	self.R[i].append(-(sys.maxsize + 1))
+							# 	self.R[i].append(-(100000000))
 							# else:
 							self.R[i].append(0)
 
@@ -65,7 +65,7 @@ class PDM:
 						self.R.append(-(pos.score)**q)
 
 					else: # si c'est un mur
-						self.R.append(-(sys.maxsize + 1))
+						self.R.append(-(100000000))
 
 
 
@@ -76,6 +76,12 @@ class PDM:
 					color_value[y] *= self.grid.colors[x]
 					color_value[y] += 1
 
+			## version plus simple
+			# color_value = []
+			# color_value.append(1)
+			# for _ in range(3):
+			# 	color_value.append(color_value[-1]*self.number_of_states+1)
+
 			for line in self.board:
 				for pos in line:
 					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
@@ -84,7 +90,7 @@ class PDM:
 						self.R.append(-color_value[pos.color]**q)
 
 					else: # si c'est un mur
-						self.R.append(-(sys.maxsize + 1))
+						self.R.append(-(100000000))
 
 		
 		else:
@@ -97,7 +103,7 @@ class PDM:
 						self.R.append(-(pos.color+1)**q)
 
 					else: # si c'est un mur
-						self.R.append(-(sys.maxsize + 1))
+						self.R.append(-(100000000))
 
 
 	def get_transition_matrix(self, p, q, max_reward, multi_obj = False, color_restrictive = False, consumption_only = False):
@@ -254,11 +260,11 @@ class PDM:
 
 		directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
 		best_policy = self.get_best_policy_from_best_values(Vt, gamma)
-		print("Vt ", Vt)
-		print("best policy ", best_policy)
+		# print("Vt ", Vt)
+		# print("best policy ", best_policy)
 		for i in range(len(best_policy)):
 			directions[i][best_policy[i]] = 1
-		print("directions ", directions)
+		# print("directions ", directions)
 		return directions
 
 		
@@ -283,7 +289,7 @@ class PDM:
 			results = np.linalg.solve(coefs,consts)
 			# check if solution is correct
 			if not np.allclose(np.dot(coefs,results),consts):
-				messagebox.showerror("Erreur", "une erreur est arrivée dans la résolution du système d'équations pour l'itération de la politique\nImpossible de trouver la solution")
+				# messagebox.showerror("Erreur", "une erreur est arrivée dans la résolution du système d'équations pour l'itération de la politique\nImpossible de trouver la solution")
 				print("Erreur dans la résolution du système d'équations pour l'itération de la politique")
 				return -1
 			# on récupère la nouvelle meilleure politique 
@@ -449,10 +455,10 @@ def _display_grid(grid):
 		print()
 	return""
 
-# g1 = GeneratorGrid(4, 4, proba_walls = 0)
-# g1.export_grid("testIMPORTANT")
-# g2 = Grid_Project()
-# g2.load_grid("testIMPORTANT")
+g1 = GeneratorGrid(4, 4, proba_walls = 0.2)
+g1.export_grid("testIMPORTANT")
+g2 = Grid_Project()
+g2.load_grid("testIMPORTANT")
 # print(_display_grid(g1.grid), g1.goal_y, g1.goal_x)
 # print(_display_grid(g2.grid), g2.goal_y, g2.goal_x)
 # g.export_grid("testIMPORTANT")
@@ -461,15 +467,52 @@ def _display_grid(grid):
 # grid2 = Grid_Project()
 # grid2.load_grid("test.madi")
 
-# pdm = PDM(g1) 
+pdm = PDM(g2, p = 0.6, color_restrictive = True) 
 # _display_grid(pdm.grid.grid)
 # print(pdm.resolution_by_PL())
-# print("----------------------")
-# print(pdm.iteration_by_policy())
-# print("----------------------")
-# print(pdm.iteration_by_value())
+print("----------------------")
+print(pdm.iteration_by_policy(gamma = 0.9))
+print("----------------------")
+print(pdm.iteration_by_value(gamma = 0.9))
+
+print(pdm.R)
 
 # g = GeneratorGrid(2, 2, proba_walls = 0)
 # pdm = PDM(g, multi_obj = True) 
 # print(pdm.PLMO(pure_politic = False))
 # print(pdm.PLMO(pure_politic = True))
+# 
+# 
+def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], trials = 15):
+	results = np.zeros((len(size),3))
+	for i,(a,b) in enumerate(size):
+		print("on calcule pour taille: ", (a,b))
+		for trial in range(trials):
+			print("essai : ", trial)
+			g = GeneratorGrid(a,b,proba_walls=0.2)
+
+			g1 = PDM(g, p=p)
+			t = time.time()
+			g1.iteration_by_value(gamma=gam)
+			a1 = (time.time() - t)
+			results[i,0] += a1
+
+			g2 = PDM(g, p=p)
+			t = time.time()
+			g2.iteration_by_policy(gamma = gam)
+			a2 = (time.time() - t)
+			results[i,1] += a2
+
+			# g3 = PDM(g, p=p)
+			# t = time.time()
+			# g3.resolution_by_PL(gamma=gamma)
+			# a3 = (time.time() - t)
+			# results[i,2] += a3
+
+	# do the mean
+	results /= trials
+
+	return results
+
+# np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
+# print(first_test(gam=0.9, p=0.6, size = [(10,10)]))
