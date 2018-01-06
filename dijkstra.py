@@ -24,12 +24,12 @@ class Node:
 
 class Dijkstra:
 
-    def __init__(self, grid, goal):
+    def __init__(self, grid):
         self.grid = grid
         self.directions = [-1 for _ in range(self.grid.height * self.grid.width)]
         self.nodes = []
-        self.goal = goal
-        self.goals = [goal] # tableau contenant les coordonnées du but
+        self.goal = [self.grid.goal_y, self.grid.goal_x]
+        self.goals = [self.goal] # tableau contenant les coordonnées du but
 
         for y in range(self.grid.height):
             self.nodes.append([])
@@ -176,7 +176,7 @@ class Dijkstra:
 
 
 
-g = GeneratorGrid(2, 2, proba_walls = 0)
-d = Dijkstra(g, [1, 1])
-d.politic_decision()
-print(d.getDirections())
+# g = GeneratorGrid(2, 2, proba_walls = 0)
+# d = Dijkstra(g)
+# d.politic_decision()
+# print(d.getDirections())

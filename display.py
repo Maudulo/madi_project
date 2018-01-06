@@ -203,25 +203,23 @@ class MainDisplay:
 			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid()
 
 	def getSolution(self, politic_type = ""):
-		if(politic_type == " PDM_valeur"):
-			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
+		pdm = PDM(self.grid_display) 
+		if politic_type == "PDM_valeur":
 			self.solution = pdm.iteration_by_value()
 		elif politic_type == "PDM_policy":
-			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
 			self.solution = pdm.iteration_by_policy()
 		elif politic_type == "PDM_PL":
-			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
 			self.solution = pdm.resolution_by_PL()
 		elif politic_type == "MOMDP_mixte":
-			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
 			self.solution = pdm.PLMO(pure_politic = False)
 		elif politic_type == "MOMDP_pure":
-			pdm = PDM(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x]) 
 			self.solution = pdm.resolution_by_PL(pure_politic = True)
-		else:
-			d = Dijkstra(self.grid_display, [self.grid_display.goal_y, self.grid_display.goal_x])
+		elif politic_type == "dijkstra":
+			d = Dijkstra(self.grid_display)
 			d.politic_decision()
 			self.solution = d.getDirections()
+		else:
+			print("Erreur fatale pas de fonction de ce nom\n", politic_type)
 
 		messagebox.showinfo("Solution calculée", "La solution est calculée.\nVeuillez appuyer sur SPACE pour la visualiser")
 		return
@@ -329,6 +327,7 @@ class MainDisplay:
 				return
 
 			action = self.choose_a_solution()
+			print(action)
 			if self.grid_display.position_robot_x == self.grid_display.goal_x and self.grid_display.position_robot_y == self.grid_display.goal_y:
 				messagebox.showinfo("Fin", "Le robot a atteint son but")
 				return
@@ -357,15 +356,16 @@ class MainDisplay:
 
 	def choose_a_solution(self):
 		position = self.grid_display.position_robot_x + self.grid_display.position_robot_y * self.grid_display.width
-		print(self.solution)
+		# print(self.solution)
 		possibilities = np.cumsum(self.solution[position])
 		print(possibilities)
 		rand = np.random.rand()
+		i = 0
 		for x in possibilities:
 			if rand < x:
-				return self.solution[x]
+				return i
+			i += 1
 		print("erreur ne somme pas à 1")
-
 
 window = MainDisplay()
 

@@ -41,7 +41,7 @@ class PDM:
 				for line in self.board:
 					for pos in line:
 
-						if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+						if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
 							self.R[i].append(max_reward**q)
 
 						elif pos.type_location == "normal" and i == pos.color: # si c'est une case normale de la couleur correcte
@@ -54,7 +54,7 @@ class PDM:
 		elif consumption_only:
 			for line in self.board:
 				for pos in line:
-					if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
 						self.R.append(max_reward**q)
 
 					elif pos.type_location == "normal": # si c'est une case normale
@@ -74,7 +74,7 @@ class PDM:
 
 			for line in self.board:
 				for pos in line:
-					if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
 						self.R.append(max_reward**q)
 					elif pos.type_location == "normal": # si c'est une case normale
 						self.R.append(-color_value[pos.color]**q)
@@ -86,7 +86,7 @@ class PDM:
 		else:
 			for line in self.board:
 				for pos in line:
-					if pos.position_x == self.goal[0] and pos.position_y == self.goal[1]: # si c'est la case but
+					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
 						self.R.append(max_reward**q)
 
 					elif pos.type_location == "normal": # si c'est une case normale
@@ -231,8 +231,8 @@ class PDM:
 
 	def iteration_by_value(self, gamma = 0.5, epsilon = 0.001):
 		t = 0
-		Vt_1 = np.zeros((4))
-		Vt = np.zeros((4))
+		Vt_1 = np.zeros((self.number_of_states))
+		Vt = np.zeros((self.number_of_states))
 
 		while True:
 			t += 1
@@ -248,8 +248,11 @@ class PDM:
 
 		directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
 		best_policy = self.get_best_policy_from_best_values(Vt, gamma)
+		print("Vt ", Vt)
+		print("best policy ", best_policy)
 		for i in range(len(best_policy)):
 			directions[i][best_policy[i]] = 1
+		print("directions ", directions)
 		return directions
 
 		
@@ -440,18 +443,32 @@ class PDM:
 
 
 
-# g = GeneratorGrid(2, 2, proba_walls = 0)
+def _display_grid(grid):
+	for y in grid:
+		for x in y:
+			print(x.position_x, x.position_y, x.type_location, "  ")
+		print()
+	return""
+
+# g1 = GeneratorGrid(4, 4, proba_walls = 0)
+# g1.export_grid("testIMPORTANT")
+# g2 = Grid_Project()
+# g2.load_grid("testIMPORTANT")
+# print(_display_grid(g1.grid), g1.goal_y, g1.goal_x)
+# print(_display_grid(g2.grid), g2.goal_y, g2.goal_x)
+# g.export_grid("testIMPORTANT")
+# print("goal = ", g.goal_x, g.goal_y, g.goal_position)
 # g.export_grid("test.madi")
 # grid2 = Grid_Project()
 # grid2.load_grid("test.madi")
 
-# # pdm = PDM(g) 
-# # print(pdm.resolution_by_PL())
-# # print("----------------------")
-# # print(pdm.iteration_by_policy())
-# # print("----------------------")
-# # print(pdm.iteration_by_value())
-
+# pdm = PDM(g1) 
+# _display_grid(pdm.grid.grid)
+# print(pdm.resolution_by_PL())
+# print("----------------------")
+# print(pdm.iteration_by_policy())
+# print("----------------------")
+# print(pdm.iteration_by_value())
 
 # # g = GeneratorGrid(2, 3, proba_walls = 0)
 # pdm = PDM(grid2, multi_obj = True) 

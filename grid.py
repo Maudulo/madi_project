@@ -22,6 +22,8 @@ class GeneratorGrid:
 		self.position_robot = 0
 		self.origin_robot = 0
 		self.goal_position = 0
+		self.goal_x = None
+		self.goal_y = None
 		self.init_locations(proba_walls, proba_colors)
 		self.init_position_robot()
 		self.init_goal_position()
@@ -56,7 +58,7 @@ class GeneratorGrid:
 				else:
 					color = 3
 				
-				self.grid[y].append(Location(y, x, score, color, type_location = type_location))
+				self.grid[y].append(Location(x, y, score, color, type_location = type_location))
 
 	def init_position_robot(self):
 		position = 0
@@ -78,6 +80,8 @@ class GeneratorGrid:
 					possible_positions.append(position)
 				position +=1
 		self.goal_position = random.choice(possible_positions)
+		self.goal_x = self.goal_position % self.height
+		self.goal_y = int(self.goal_position / self.width)
 
 	def export_grid(self, file_name):
 
@@ -124,7 +128,7 @@ class Grid_Project:
 					score = int(line[0])
 					color = int(line[1])
 					self.colors[color] += 1
-					type_location = str(line[2])
+					type_location = str(line[2]).rstrip()
 					self.grid[y].append(Location(x, y, score, color, type_location = type_location))
 			position_robot = int(file.readline())
 			goal_position = int(file.readline())
