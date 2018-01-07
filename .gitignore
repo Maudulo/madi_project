@@ -4,3 +4,4 @@ test
 *.madi
 gurobi.log
 testIMPORTANT
+plot.py

@@ -477,37 +477,6 @@ def _display_grid(grid):
 		print()
 	return""
 
-<<<<<<< HEAD
-=======
-# g1 = GeneratorGrid(4, 4, proba_walls = 0.2)
-# g1.export_grid("testIMPORTANT")
-# g2 = Grid_Project()
-# g2.load_grid("testIMPORTANT")
-# print(_display_grid(g1.grid), g1.goal_y, g1.goal_x)
-# print(_display_grid(g2.grid), g2.goal_y, g2.goal_x)
-# g.export_grid("testIMPORTANT")
-# print("goal = ", g.goal_x, g.goal_y, g.goal_position)
-# g.export_grid("test.madi")
-# grid2 = Grid_Project()
-# grid2.load_grid("test.madi")
-
-# pdm = PDM(g2, p = 0.6, color_restrictive = True) 
-# _display_grid(pdm.grid.grid)
-# print(pdm.resolution_by_PL())
-# print("----------------------")
-# print(pdm.iteration_by_policy(gamma = 0.9))
-# print("----------------------")
-# print(pdm.iteration_by_value(gamma = 0.9))
-
-# print(pdm.R)
-
-# g = GeneratorGrid(2, 2, proba_walls = 0)
-# pdm = PDM(g, multi_obj = True) 
-# print(pdm.PLMO(pure_politic = False))
-# print(pdm.PLMO(pure_politic = True))
-# 
-# 
->>>>>>> 345ce6c9546e9d770f448d71a83bd7a7fe08a5ac
 def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], trials = 15):
 	results = np.zeros((len(size),3))
 	for i,(a,b) in enumerate(size):
