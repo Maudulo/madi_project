@@ -474,5 +474,5 @@ class MainDisplay:
 			i += 1
 		print("erreur ne somme pas à 1")
 
-window = MainDisplay()
+# window = MainDisplay()
 
