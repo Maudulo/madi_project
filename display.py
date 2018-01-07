@@ -138,7 +138,7 @@ class MainDisplay:
 			self.name_selection_window.resizable(False, False)
 			self.name_selection_window.protocol("WM_DELETE_WINDOW", self.closing_selection_window)
 
-			Label(self.name_selection_window, text="Veuillez choisir la position de départ avec le clic gauche et la position d'arrivée avec le clic droit.").grid()
+			Label(self.name_selection_window, text="Veuillez choisir la position de départ avec le clic gauche et la position d'arrivée avec le clic droit.", font = "Helvetica 10 bold").grid()
 			
 			self.canvas.bind("<Button-1>", self.select_start_position_callback)
 			self.canvas.bind("<Button-3>", self.select_goal_position_callback)
@@ -229,15 +229,15 @@ class MainDisplay:
 			self.name_compute_solution.resizable(False, False)
 			self.name_compute_solution.protocol("WM_DELETE_WINDOW", self.closing_compute_window)
 
-			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.").grid()
+			Label(self.name_compute_solution, text="Veuillez choisir la méthode de résolution du meilleur chemin.", font = "Helvetica 10 bold").grid(pady=5)
 			
-			Button(self.name_compute_solution, text="PDM (consommation pure)", command =lambda: self.getSolution(politic_type = "consommation")).grid()
-			Button(self.name_compute_solution, text="PDM (ordre couleurs)", command =lambda: self.getSolution(politic_type = "couleur")).grid()
-			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_valeur")).grid()
-			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_policy")).grid()
-			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_PL")).grid()
-			Button(self.name_compute_solution, text="MOMDP (politique mixte)", command =lambda: self.getSolution(politic_type = "MOMDP_mixte")).grid()
-			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid()
+			Button(self.name_compute_solution, text="PDM (consommation pure)", command =lambda: self.getSolution(politic_type = "consommation")).grid(pady=5)
+			Button(self.name_compute_solution, text="PDM (ordre couleurs)", command =lambda: self.getSolution(politic_type = "couleur")).grid(pady=5)
+			Button(self.name_compute_solution, text="PDM itération par valeur (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_valeur")).grid(pady=5)
+			Button(self.name_compute_solution, text="PDM itération par politique (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_policy")).grid(pady=5)
+			Button(self.name_compute_solution, text="PDM par PL (couleur = risque)", command =lambda: self.getSolution(politic_type = "PDM_PL")).grid(pady=5)
+			Button(self.name_compute_solution, text="MOMDP (politique mixte)", command =lambda: self.getSolution(politic_type = "MOMDP_mixte")).grid(pady=5)
+			Button(self.name_compute_solution, text="MOMDP (politique pure)", command =lambda: self.getSolution(politic_type = "MOMDP_pure")).grid(pady=5)
 
 	def display_parameters(self):
 		if self.name_parameters != None:
@@ -248,36 +248,36 @@ class MainDisplay:
 			self.name_parameters.resizable(False, False)
 			self.name_parameters.protocol("WM_DELETE_WINDOW", self.closing_parameters)
 
-			Label(self.name_parameters, text="Veuillez choisir Les nouveaux paramètres").grid(row = 0,columnspan=2)
+			Label(self.name_parameters, text="Veuillez choisir Les nouveaux paramètres", font = "Helvetica 10 bold").grid(row = 0,columnspan=2)
 			gamma = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='Gamma', length=200)
-			gamma.grid(row=1,columnspan=2)
+			gamma.grid(row=1,columnspan=2, pady=10)
 			gamma.set(self.gamma)
 
 			p = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='P', length=200)
-			p.grid(row=2,columnspan=2)
+			p.grid(row=2,columnspan=2, pady=10)
 			p.set(self.p)
 
 			q = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='Q', length=200)
-			q.grid(row=3,columnspan=2)
+			q.grid(row=3,columnspan=2, pady=10)
 			q.set(self.q)
 
 			basevar = IntVar()
 			basevar.set(self._base_reward)
-			base_reward = Scale(self.name_parameters, from_=1, to=9, orient=HORIZONTAL,variable = basevar, resolution=1, tickinterval=3, label='base de la récompense', length=100, command=lambda base: self.report_change(base, coefvar.get()))
-			base_reward.grid(row=4,column = 0)
+			base_reward = Scale(self.name_parameters, from_=1, to=9, orient=HORIZONTAL,variable = basevar, resolution=1, tickinterval=3, label='base de la récompense', length=150, command=lambda base: self.report_change(base, coefvar.get()))
+			base_reward.grid(row=5,column = 0)
 			coefvar = IntVar()
 			coefvar.set(self._coef_reward)
-			coef_reward = Scale(self.name_parameters, from_=0, to=10, orient=HORIZONTAL,variable = coefvar, resolution=1, tickinterval=5, label='fois 10 puissance:', length=100, command=lambda coef: self.report_change(basevar.get(),coef))
-			coef_reward.grid(row=4,column = 1)
+			coef_reward = Scale(self.name_parameters, from_=0, to=10, orient=HORIZONTAL,variable = coefvar, resolution=1, tickinterval=5, label='fois 10 puissance:', length=150, command=lambda coef: self.report_change(basevar.get(),coef))
+			coef_reward.grid(row=5,column = 1)
 			coef_reward.set(self._coef_reward)
 			self.label_reward = StringVar()
-			Label(self.name_parameters, textvariable=self.label_reward).grid(row=5,columnspan=2)
+			Label(self.name_parameters, textvariable=self.label_reward).grid(row=4,columnspan=2)
 			self.report_change(basevar.get(),coefvar.get())
 
-			validate = Button(self.name_parameters, text = "Valider", command =lambda: self._update_parameters(gamma.get(), p.get(), q.get(),base_reward.get(),coef_reward.get())).grid(row=6,columnspan=2)
+			validate = Button(self.name_parameters, text = "Valider", command =lambda: self._update_parameters(gamma.get(), p.get(), q.get(),base_reward.get(),coef_reward.get())).grid(row=6,columnspan=2, pady=15)
 
 	def report_change(self,base,coef):
-		self.label_reward.set(str(int(base)*10**int(coef)))
+		self.label_reward.set("récompense but = " + str(int(base)*10**int(coef)))
 
 	def _update_parameters(self, gamma,p,q,base_reward, coef_reward):
 		self.name_parameters.destroy()
