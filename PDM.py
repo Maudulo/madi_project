@@ -29,12 +29,18 @@ class PDM:
 		self.number_of_states = self.width * self.height
 		self.number_of_actions = 4 # (haut, bas, gauche droite)
 		self.number_of_criteria = 4
-		#self.objectif = 2 # indice de la position objectif
 		self.get_transition_matrix(p, q, max_reward, multi_obj, color_restrictive, consumption_only)
 		
 
 	def get_reward_matrix(self, q = 1, max_reward = 1000, multi_obj = False, color_restrictive = False, consumption_only = False):
-		# on crée le tableau des récompenses
+		"""
+			@params q : le facteur de puissance appliqué à la récompense
+					max_reward : la récompense donnée pour la case but
+					multi_obj : booléen concernant la création de la matrice de récompense associée à du multi-critère
+					color_restrictive : booléen concernant l'application de la récompense sur les couleurs (un robot préfère emprunter tous les verts que de prendre une case bleue)
+					consumption_only : booléen concernant l'application de la récompense sur les valeurs des cases.
+			Cette fonction permet de créer la fonction de récompense.
+		"""
 		self.R = []
 		if(multi_obj):
 			for i in range(self.number_of_criteria):
@@ -49,11 +55,7 @@ class PDM:
 							self.R[i].append(-(pos.score))
 
 						else: # si c'est un mur ou une autre couleur
-							# if(pos.type_location == "wall"):
-							# 	self.R[i].append(-(100000000))
-							# else:
 							self.R[i].append(0)
-
 
 		elif consumption_only:
 			for line in self.board:
@@ -66,8 +68,6 @@ class PDM:
 
 					else: # si c'est un mur
 						self.R.append(-(100000000))
-
-
 
 		elif color_restrictive:
 			color_value = [1,1,1,1]
@@ -92,7 +92,6 @@ class PDM:
 					else: # si c'est un mur
 						self.R.append(-(100000000))
 
-		
 		else:
 			for line in self.board:
 				for pos in line:
@@ -107,11 +106,20 @@ class PDM:
 
 
 	def get_transition_matrix(self, p, q, max_reward, multi_obj = False, color_restrictive = False, consumption_only = False):
+		"""
+			@params p : la probabilité d'effectuer correctement le déplacement, sans déviation
+					q : le facteur de puissance appliqué à la récompense
+					max_reward : la récompense donnée pour la case but
+					multi_obj : booléen concernant la création de la matrice de récompense associée à du multi-critère
+					color_restrictive : booléen concernant l'application de la récompense sur les couleurs (un robot préfère emprunter tous les verts que de prendre une case bleue)
+					consumption_only : booléen concernant l'application de la récompense sur les valeurs des cases.
+			@return T la fonction de transition
+			Cette fonction permet de créer la fonction de transition T.
+		"""
 		
+		# création de la matrice des récompenses
 		self.get_reward_matrix(q, max_reward, multi_obj, color_restrictive, consumption_only)
 
-		# on crée la matrice de transition
-		#self.T = np.zeros((self.number_of_states, self.number_of_actions, 4))
 		self.T = np.zeros((self.number_of_states, self.number_of_actions, self.number_of_states)) 
 		#print(self.T.shape)
 		for y in range(self.height):
@@ -238,10 +246,21 @@ class PDM:
 
 
 	def get_best_policy_from_best_values(self, Vt, gamma):
+		"""
+			@params Vt : la matrice contenant les valeurs 
+					gamma : le facteur d'atténuation
+			@return les politiques optimales pour chaque action et pour chaque état
+		"""
 		return [np.argmax([self.R[s] + gamma * (np.dot(self.T[s,a], Vt)) for a in range(self.number_of_actions)]) for s in range(self.number_of_states)]
 
-
 	def iteration_by_value(self, gamma = 0.5, epsilon = 0.001):
+		"""
+			@params gamma : le facteur d'atténuation
+					epsilon : distance maximale autorisée entre deux étapes
+			@return le tableau des directions pour chaque case
+			Applique une itération par valeur pour obtenir les directions en chaque case.
+		"""
+
 		t = 0
 		Vt_1 = np.zeros((self.number_of_states))
 		Vt = np.zeros((self.number_of_states))
@@ -250,27 +269,31 @@ class PDM:
 			t += 1
 			for s in range(self.number_of_states):
 				Vt[s] = max([self.R[s] +  gamma * (np.dot(self.T[s,a],Vt_1)) for a in range(self.number_of_actions)])
+
 			# si l'écart de valeur entre deux itérations est inférieur à epsilon, alors on s'arrête
-			# if max([abs(x-y) for (x,y) in zip(Vt,Vt_1)]) < epsilon:
-			#   break
 			if np.allclose(Vt, Vt_1, atol = epsilon, rtol = 0):
 				break
+
 			else:
 				Vt_1 = copy.copy(Vt)
 
 		directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
 		best_policy = self.get_best_policy_from_best_values(Vt, gamma)
-		# print("Vt ", Vt)
-		# print("best policy ", best_policy)
+
 		for i in range(len(best_policy)):
 			directions[i][best_policy[i]] = 1
-		# print("directions ", directions)
+
 		return directions
 
-		
-	
 	def iteration_by_policy(self, gamma = 0.5):
+		"""
+			@params gamma : le facteur d'atténuation
+			@return le tableau des directions pour chaque case
+			Applique une itération par politique pour obtenir les directions en chaque case.
+		"""
+
 		t = 0
+
 		# on selectionne une action au hasard pour chaque état
 		actions = [np.random.randint(0, self.number_of_actions) for _ in range(self.number_of_states)]
 		actions_1 = copy.copy(actions)
@@ -280,21 +303,23 @@ class PDM:
 
 		while True:
 			t += 1
+
 			# on résoud le système
 			for s in range(self.number_of_states):
-				# Vt[s] = self.R[s] +  gamma * (np.dot(self.T[s,actions[s]]*Vt))
 				coefs[s] = np.dot([self.T[s,actions[s]]], gamma)
 				coefs[s,s] -= 1
 				consts[s] = -self.R[s]
 			results = np.linalg.solve(coefs,consts)
+
 			# check if solution is correct
 			if not np.allclose(np.dot(coefs,results),consts):
-				# messagebox.showerror("Erreur", "une erreur est arrivée dans la résolution du système d'équations pour l'itération de la politique\nImpossible de trouver la solution")
 				print("Erreur dans la résolution du système d'équations pour l'itération de la politique")
 				return -1
+
 			# on récupère la nouvelle meilleure politique 
 			for s in range(self.number_of_states):
 				actions[s] = np.argmax([self.R[s] +  gamma * (np.dot(self.T[s,a],results)) for a in range(self.number_of_actions)])
+
 			# si la politique est la même qu'au tour précédent on arrête
 			if np.allclose(actions, actions_1):
 				break
@@ -317,10 +342,11 @@ class PDM:
 			messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
 
 	def _resolution_by_PL(self, gamma = 0.5):
-		# résoudre min sum(Vt)
-		# sous contraintes: Vt[s] >= R(s,a) + gamma * sum_forall_s'(T[s,a,s'] * Vt[s']) for all s for all a
-		# puis choisir la meilleur action pour chaque état 
-
+		"""
+			@params gamma : le facteur d'atténuation
+			@return le tableau des directions pour chaque case
+			Applique un PL pour obtenir les directions optimales
+		"""
 		
 		try:
 
@@ -328,12 +354,10 @@ class PDM:
 			self.model = Model("mip")
 
 			# Create variables
-			
 			Vt = [0 for _ in range(self.number_of_states)]
 			for state in range(self.number_of_states):
 				Vt[state] = self.model.addVar(0, GRB.INFINITY, vtype=GRB.CONTINUOUS)
 			self.model.update()
-
 
 			# Set objective
 			self.model.setObjective(quicksum(Vt), GRB.MINIMIZE)
@@ -341,7 +365,6 @@ class PDM:
 			# Add constraint
 			for state in range(self.number_of_states):
 				for action in range(self.number_of_actions):
-					# m.addConstr(Vt[state], GRB.GREATER_EQUAL, self.R[s] +  gamma * (np.dot(self.T[s,a]*Vt))
 					self.model.addConstr(Vt[state] - gamma * quicksum([self.T[state,action,s2]*Vt[s2] for s2 in range(self.number_of_states)]), GRB.GREATER_EQUAL, self.R[state])
 			self.model.update()
 
@@ -349,14 +372,7 @@ class PDM:
 			self.model.optimize()
 			t = (time.time() - start_time)
 
-			# list_var_gurobi = []
-			# for v in self.model.getVars():
-			# 	# print(v.varName, v.x)
-			# 	list_var_gurobi.append(v.x)
-
-			# print('Obj:', self.model.objVal)
 			directions = [[0 for _ in range(self.number_of_actions)] for _ in range(self.number_of_states)]
-			# best_policy = self.get_best_policy_from_best_values(list_var_gurobi, gamma)
 
 			best_policy = self.get_best_policy_from_best_values([v.x for v in Vt], gamma)
 
@@ -376,6 +392,12 @@ class PDM:
 			messagebox.showinfo("Limitations", "Cette session ne dispose pas du solveur gurobi et de son interface gurobipy.py\nimpossible d'utiliser cette opération")
 
 	def _PLMO(self, gamma, pure_politic):
+		"""
+			@params gamma : le facteur d'atténuation
+					pure_politic : le booléen pour ajouetr les contraintes forçant une politique pure
+			@return le tableau des directions pour chaque case
+			Application d'un PL pour la résolution du multi-critère.
+		"""
 
 		try:
 			# Create a new model
@@ -455,34 +477,6 @@ def _display_grid(grid):
 		print()
 	return""
 
-g1 = GeneratorGrid(4, 4, proba_walls = 0.2)
-g1.export_grid("testIMPORTANT")
-g2 = Grid_Project()
-g2.load_grid("testIMPORTANT")
-# print(_display_grid(g1.grid), g1.goal_y, g1.goal_x)
-# print(_display_grid(g2.grid), g2.goal_y, g2.goal_x)
-# g.export_grid("testIMPORTANT")
-# print("goal = ", g.goal_x, g.goal_y, g.goal_position)
-# g.export_grid("test.madi")
-# grid2 = Grid_Project()
-# grid2.load_grid("test.madi")
-
-pdm = PDM(g2, p = 0.6, color_restrictive = True) 
-# _display_grid(pdm.grid.grid)
-# print(pdm.resolution_by_PL())
-print("----------------------")
-print(pdm.iteration_by_policy(gamma = 0.9))
-print("----------------------")
-print(pdm.iteration_by_value(gamma = 0.9))
-
-print(pdm.R)
-
-# g = GeneratorGrid(2, 2, proba_walls = 0)
-# pdm = PDM(g, multi_obj = True) 
-# print(pdm.PLMO(pure_politic = False))
-# print(pdm.PLMO(pure_politic = True))
-# 
-# 
 def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], trials = 15):
 	results = np.zeros((len(size),3))
 	for i,(a,b) in enumerate(size):
@@ -509,11 +503,11 @@ def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], tria
 			# a3 = (time.time() - t)
 			# results[i,2] += a3
 
-			g4 = PDM(g, p=p, multi_obj = True)
-			t = time.time()
-			g4.PLMO(gamma = gam, pure_politic = False)
-			a4 = (time.time() - t)
-			results[i,0] += a4
+			# g4 = PDM(g, p=p, multi_obj = True)
+			# t = time.time()
+			# g4.PLMO(gamma = gam, pure_politic = False)
+			# a4 = (time.time() - t)
+			# results[i,0] += a4
 
 			g5 = PDM(g, p=p, multi_obj = True)
 			t = time.time()
@@ -521,11 +515,42 @@ def first_test(gam = 0.9,p = 0.6, size = [(10,10),(10,15),(15,20),(20,20)], tria
 			a5 = (time.time() - t)
 			results[i,1] += a5
 
-
 	# do the mean
 	results /= trials
 
 	return results
 
-np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
-print(first_test(gam=0.9, p=0.6, size = [(5, 5)], trials = 5))
+######### TEST SUR LE CHARGEMENT DU FICHIER ##############
+
+# g1 = GeneratorGrid(4, 4, proba_walls = 0.2)
+# g1.export_grid("testIMPORTANT")
+# g2 = Grid_Project()
+# g2.load_grid("testIMPORTANT")
+# print(_display_grid(g1.grid), g1.goal_y, g1.goal_x)
+# print(_display_grid(g2.grid), g2.goal_y, g2.goal_x)
+# g.export_grid("testIMPORTANT")
+# print("goal = ", g.goal_x, g.goal_y, g.goal_position)
+# g.export_grid("test.madi")
+# grid2 = Grid_Project()
+# grid2.load_grid("test.madi")
+
+######### TEST SUR LES CRITERES PAR VALEUR, PAR POLITIQUE ET PL ##############
+
+# pdm = PDM(g2, p = 0.6, color_restrictive = True) 
+# print(pdm.resolution_by_PL())
+# print("----------------------")
+# print(pdm.iteration_by_policy(gamma = 0.9))
+# print("----------------------")
+# print(pdm.iteration_by_value(gamma = 0.9))
+
+
+######### TEST SUR LE MULTI CRITERE ##############
+
+# g = GeneratorGrid(2, 2, proba_walls = 0)
+# pdm = PDM(g, multi_obj = True) 
+# print(pdm.PLMO(pure_politic = False))
+# print(pdm.PLMO(pure_politic = True))
+
+######### TEST SUR LE TEMPS D EXECUTION ##############
+# np.set_printoptions(formatter={'float': '{: 0.5f}'.format})
+# print(first_test(gam=0.5, p=0.6, size = [(5, 5), (5, 10)], trials = 15))

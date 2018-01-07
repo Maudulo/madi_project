@@ -1,7 +1,6 @@
 import sys
 
 from grid import *
-from dijkstra import *
 from PDM import *
 
 from tkinter import *
@@ -45,7 +44,7 @@ class MainDisplay:
 		self.name_option_window = None
 
 	def closing_compute_window(self):
-		self.name_compute_solution.destoy()
+		self.name_compute_solution.destroy()
 		self.name_compute_solution = None
 
 	def closing_selection_window(self):

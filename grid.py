@@ -29,6 +29,12 @@ class GeneratorGrid:
 		self.init_goal_position()
 
 	def init_locations(self, proba_walls, proba_colors):
+		"""
+			@params proba_walls : la probabilité qu'une case soit un mur
+					proba_colors : tableau contenant la probabilité pour une case d'être d'une couleur donnée
+			Créé la grille avec une couleur et une probabilité d'apparition des murs.
+
+		"""
 		for y in range(self.height):
 			self.grid.append([])
 			for x in range(self.width):
@@ -61,6 +67,9 @@ class GeneratorGrid:
 				self.grid[y].append(Location(x, y, score, color, type_location = type_location))
 
 	def init_position_robot(self):
+		"""
+			Choisis de manière aléatoire la position initiale du robot dans l'ensemble des cases qui ne sont pas des murs.
+		"""
 		position = 0
 		possible_positions = []
 		for y in range(self.height):
@@ -72,6 +81,10 @@ class GeneratorGrid:
 		self.origin_robot = self.position_robot
 
 	def init_goal_position(self):
+		"""
+			Choisis de manière aléatoire la position but du robot dans l'ensemble des cases qui ne sont pas des murs.
+			La case choisie est différente de la case initiale du robot.
+		"""
 		position = 0
 		possible_positions = []
 		for y in range(self.height):
@@ -84,6 +97,10 @@ class GeneratorGrid:
 		self.goal_y = int(self.goal_position / self.width)
 
 	def export_grid(self, file_name):
+		"""
+			@params file_name : le nom sous lequel enregistrer le fichier.
+			Créé un fichier contenant les informations de la grille : cases avec leur valeur, couleur et type, position initiale du robot et but du robot.
+		"""
 
 		with open(file_name, "w") as file:
 			file.write(str(self.height) + " " + str(self.width) + "\n")
@@ -113,6 +130,10 @@ class Grid_Project:
 		self.colors = [0,0,0,0]
 
 	def load_grid(self, file_name):
+		"""
+			@params file_name : le nom sous lequel charger le fichier.
+			Ouvre un fichier contenant une grille, et créé la grille correspondante.
+		"""
 		with open(file_name, "r") as file:
 			line = file.readline().split(" ")
 			self.height = int(line[0])
@@ -141,13 +162,26 @@ class Grid_Project:
 
 
 	def display_score(self):
+		"""
+			@return une chaine de caractère contenant les scores pour chaque couleur, le score global et le nombre de cases d'une couleur donnée visité
+		"""
 		return "vert:" + str(self.score[0]) + " bleu:" + str(self.score[1]) + " rouge:" + str(self.score[2]) + " noire:" + str(self.score[3]) + "\nScore total:" + str(sum(self.score)) + "\ncases: vert:" + str(self.color_visited[0]) + " bleu:" + str(self.color_visited[1]) + " rouge:" + str(self.color_visited[2]) + " noire:" + str(self.color_visited[3])
 
 	def relocate_goal_position(self, x, y):
+		"""	
+			@params x : coordonnée x
+					y : coordonnée y
+			Met à jour les coordonnées de l'objectif
+		"""
 		self.goal_x = x
 		self.goal_y = y
 
 	def relocate_start_position(self, x, y):
+		"""	
+			@params x : coordonnée x
+					y : coordonnée y
+			Met à jour les coordonnées initiales du robot
+		"""
 		self.origin_robot_x = x
 		self.origin_robot_y = y
 		self.position_robot_x = x
