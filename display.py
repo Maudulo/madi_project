@@ -196,17 +196,6 @@ class MainDisplay:
 		self.name_option_window.destroy()
 		self.name_option_window = None
 
-		reset = Button(self.window, text="Réinitialiser", command=self.reset_position)
-		reset.grid(row = 0, column = 1, padx=0.1, pady=5)
-		get_to_start_position = Button(self.window, text="Début", command=self.get_to_start_position)
-		get_to_start_position.grid(row = 0, column = 2, padx=0.1, pady=5)
-		select_start_goal_position = Button(self.window, text="Selection start/end", command=self.display_position_selection)
-		select_start_goal_position.grid(row = 1, column = 1, columnspan=2, padx=10, pady=10)
-		get_solution = Button(self.window, text="Calculer une solution", command=self.display_compute_solution)
-		get_solution.grid(row = 0, column = 3, padx=10, pady=10)
-		change_parameters = Button(self.window, text="Changer les paramètres", command=self.display_parameters)
-		change_parameters.grid(row = 1, column = 3, padx=10, pady=10)
-
 
 		if len(path) == 0:
 			path = "generated_grid.madi"
@@ -257,7 +246,7 @@ class MainDisplay:
 			p.grid(row=2,columnspan=2, pady=10)
 			p.set(self.p)
 
-			q = Scale(self.name_parameters, from_=0, to=1, orient=HORIZONTAL, resolution=0.05, tickinterval=0.25, label='Q', length=200)
+			q = Scale(self.name_parameters, from_=1, to=10, orient=HORIZONTAL, resolution=1, tickinterval=2, label='Q', length=200)
 			q.grid(row=3,columnspan=2, pady=10)
 			q.set(self.q)
 
@@ -334,6 +323,17 @@ class MainDisplay:
 
 	def display_canvas(self, path):
 
+		reset = Button(self.window, text="Réinitialiser", command=self.reset_position)
+		reset.grid(row = 0, column = 1, padx=0.1, pady=5)
+		get_to_start_position = Button(self.window, text="Début", command=self.get_to_start_position)
+		get_to_start_position.grid(row = 0, column = 2, padx=0.1, pady=5)
+		select_start_goal_position = Button(self.window, text="Selection start/end", command=self.display_position_selection)
+		select_start_goal_position.grid(row = 1, column = 1, columnspan=2, padx=10, pady=10)
+		get_solution = Button(self.window, text="Calculer une solution", command=self.display_compute_solution)
+		get_solution.grid(row = 0, column = 3, padx=10, pady=10)
+		change_parameters = Button(self.window, text="Changer les paramètres", command=self.display_parameters)
+		change_parameters.grid(row = 1, column = 3, padx=10, pady=10)
+		
 		self.grid_display = Grid_Project()
 		self.grid_display.load_grid(path)
 

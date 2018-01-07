@@ -42,6 +42,13 @@ class PDM:
 			Cette fonction permet de créer la fonction de récompense.
 		"""
 		self.R = []
+
+		q_max_reward = max_reward
+		if max_reward**q > sys.maxsize-1:
+			q_max_reward = sys.maxsize-1
+		else:
+			q_max_reward = max_reward**q
+
 		if(multi_obj):
 			for i in range(self.number_of_criteria):
 				self.R.append([])
@@ -49,7 +56,7 @@ class PDM:
 					for pos in line:
 
 						if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
-							self.R[i].append(max_reward**q)
+							self.R[i].append(max_reward)
 
 						elif pos.type_location == "normal" and i == pos.color: # si c'est une case normale de la couleur correcte
 							self.R[i].append(-(pos.score))
@@ -61,10 +68,14 @@ class PDM:
 			for line in self.board:
 				for pos in line:
 					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
-						self.R.append(max_reward**q)
+						self.R.append(q_max_reward)
 
 					elif pos.type_location == "normal": # si c'est une case normale
-						self.R.append(-(pos.score)**q)
+						score = (pos.score)**q
+						if score > sys.maxsize:
+							messagebox.showinfo("attention", "les valeurs des paramètres sont trop élevés")
+							score = (sys.maxsize-1)
+						self.R.append(-score)
 
 					else: # si c'est un mur
 						self.R.append(-(100000000))
@@ -85,9 +96,9 @@ class PDM:
 			for line in self.board:
 				for pos in line:
 					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
-						self.R.append(max_reward**q)
+						self.R.append(max_reward)
 					elif pos.type_location == "normal": # si c'est une case normale
-						self.R.append(-color_value[pos.color]**q)
+						self.R.append(-color_value[pos.color])
 
 					else: # si c'est un mur
 						self.R.append(-(100000000))
@@ -96,10 +107,14 @@ class PDM:
 			for line in self.board:
 				for pos in line:
 					if pos.position_y == self.goal[0] and pos.position_x == self.goal[1]: # si c'est la case but
-						self.R.append(max_reward**q)
+						self.R.append(q_max_reward)
 
 					elif pos.type_location == "normal": # si c'est une case normale
-						self.R.append(-(pos.color+1)**q)
+						score = (pos.color+1)**q
+						if score > sys.maxsize:
+							messagebox.showinfo("attention", "les valeurs des paramètres sont trop élevés")
+							score = (sys.maxsize-1)
+						self.R.append(-score)
 
 					else: # si c'est un mur
 						self.R.append(-(100000000))
@@ -311,10 +326,10 @@ class PDM:
 				consts[s] = -self.R[s]
 			results = np.linalg.solve(coefs,consts)
 
-			# check if solution is correct
-			if not np.allclose(np.dot(coefs,results),consts):
-				print("Erreur dans la résolution du système d'équations pour l'itération de la politique")
-				return -1
+			# # check if solution is correct
+			# if not np.allclose(np.dot(coefs,results),consts):
+			# 	print("Erreur dans la résolution du système d'équations pour l'itération de la politique")
+			# 	return -1
 
 			# on récupère la nouvelle meilleure politique 
 			for s in range(self.number_of_states):
